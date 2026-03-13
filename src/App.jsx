@@ -905,11 +905,19 @@ export default function JapanGuide() {
   const [weather,    setWeather]    = useState({});   // { "2026-03-26": { city:"osaka", hi:18, lo:12, rain:0.2, code:1 }, ... }
   const [wxLoading,  setWxLoading]  = useState(false);
   const [wxErr,      setWxErr]      = useState(false);
+  const [isMobile,   setIsMobile]   = useState(()=>typeof window!=="undefined"&&window.innerWidth<768);
 
   const mapRef     = useRef(null);
   const mapInst    = useRef(null);
   const markersRef = useRef({});
   const cardRefs   = useRef({});
+
+  // Mobile resize
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   // Load My Finds from persistent storage
   useEffect(() => {
@@ -1016,6 +1024,15 @@ export default function JapanGuide() {
       markersRef.current = {};
     }
   }, [view]);
+
+  // Destroy+reinit map when mobile layout changes (mapRef points to different DOM node)
+  useEffect(() => {
+    if (mapInst.current) {
+      try { mapInst.current.remove(); } catch(e) {}
+      mapInst.current = null;
+      markersRef.current = {};
+    }
+  }, [isMobile]);
 
   // Init map (runs when view returns to guide)
   useEffect(() => {
@@ -1163,25 +1180,33 @@ export default function JapanGuide() {
         .dark-tiles{filter:invert(1) hue-rotate(200deg) brightness(0.75) saturate(0.6) contrast(0.9);}
         input,textarea,select{outline:none;} input:focus,textarea:focus,select:focus{border-color:#FF6EB4!important;}
         .stripe{background:repeating-linear-gradient(90deg,#FF6EB4 0 9.09%,#FF8C70 9.09% 18.18%,#FFE566 18.18% 27.27%,#2DFFC8 27.27% 36.36%,#C0A8FF 36.36% 45.45%,#7BFF8C 45.45% 54.54%,#FFB347 54.54% 63.63%,#FF9F43 63.63% 72.72%,#E879F9 72.72% 81.81%,#60BFFF 81.81% 100%);height:4px;}
+        .scroll-x{display:flex;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;}
+        .scroll-x::-webkit-scrollbar{display:none;}
+        @media(max-width:767px){
+          .nav-tabs{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap!important;}
+          .nav-tabs::-webkit-scrollbar{display:none;}
+          .header-row{flex-wrap:nowrap!important;align-items:center;}
+          .header-title{flex-shrink:0;}
+        }
       `}</style>
 
       {/* ── HEADER */}
       <div style={{background:"linear-gradient(135deg,#110D22,#1F1440 50%,#2A1858)",position:"sticky",top:0,zIndex:100,boxShadow:"0 4px 30px #00000088"}}>
         <div style={{maxWidth:1320,margin:"0 auto",padding:"0 16px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:16,padding:"12px 0 0",flexWrap:"wrap"}}>
-            <div>
-              <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:"clamp(22px,4vw,42px)",letterSpacing:"0.06em",lineHeight:1,background:"linear-gradient(90deg,#FF6EB4,#FF8C70,#FFE566)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",display:"block"}}>
+          <div className="header-row" style={{display:"flex",alignItems:"center",gap:isMobile?8:16,padding:"10px 0 0",flexWrap:isMobile?"nowrap":"wrap"}}>
+            <div className="header-title" style={{flexShrink:0}}>
+              <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"clamp(18px,5vw,28px)":"clamp(22px,4vw,42px)",letterSpacing:"0.06em",lineHeight:1,background:"linear-gradient(90deg,#FF6EB4,#FF8C70,#FFE566)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",display:"block"}}>
                 JAPAN 2026
               </div>
-              <div style={{fontSize:10,color:C.muted,letterSpacing:"0.2em",fontWeight:600,marginTop:2}}>UNDERGROUND TRAVEL GUIDE ▸ 24 MAR – 15 APR</div>
+              {!isMobile && <div style={{fontSize:10,color:C.muted,letterSpacing:"0.2em",fontWeight:600,marginTop:2}}>UNDERGROUND TRAVEL GUIDE ▸ 24 MAR – 15 APR</div>}
             </div>
             <div style={{flex:1}}/>
-            <div style={{display:"flex",gap:2}}>
+            <div className="nav-tabs" style={{display:"flex",gap:isMobile?0:2,flexShrink:0}}>
               {VIEWS.map(v => {
                 const active = view===v.id;
                 return (
                   <button key={v.id} onClick={()=>setView(v.id)}
-                    style={{background:active?"rgba(255,110,180,0.18)":"transparent",border:"none",borderBottom:active?"2px solid #FF6EB4":"2px solid transparent",color:active?"#FF6EB4":C.dim,fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:"clamp(11px,1.4vw,14px)",letterSpacing:"0.12em",padding:"8px 12px 7px",cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
+                    style={{background:active?"rgba(255,110,180,0.18)":"transparent",border:"none",borderBottom:active?"2px solid #FF6EB4":"2px solid transparent",color:active?"#FF6EB4":C.dim,fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"11px":"clamp(11px,1.4vw,14px)",letterSpacing:"0.08em",padding:isMobile?"7px 8px 6px":"8px 12px 7px",cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
                     {v.icon} {v.label}
                   </button>
                 );
@@ -1208,7 +1233,7 @@ export default function JapanGuide() {
         </div>
       </div>
 
-      <div style={{maxWidth:1320,margin:"0 auto",padding:"0 16px"}}>
+      <div style={{maxWidth:1320,margin:"0 auto",padding:isMobile?"0 10px":"0 16px"}}>
 
         {/* ══ EXPLORE VIEW ══ */}
         {view==="guide" && (
@@ -1243,17 +1268,17 @@ export default function JapanGuide() {
               </div>
             )}
 
-            <div style={{padding:"8px 0",display:"flex",flexWrap:"wrap",alignItems:"center",gap:"6px 12px",borderBottom:`1px solid ${C.border}`,marginBottom:14}}>
-              <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(13px,2vw,20px)",color:C.text,letterSpacing:"0.04em"}}>
+            <div style={{padding:"8px 0",display:"flex",flexWrap:isMobile?"nowrap":"wrap",alignItems:"center",gap:isMobile?"8px":"6px 12px",borderBottom:`1px solid ${C.border}`,marginBottom:14,overflowX:isMobile?"auto":"visible",scrollbarWidth:"none"}}>
+              {!isMobile && <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(13px,2vw,20px)",color:C.text,letterSpacing:"0.04em",flexShrink:0}}>
                 {cityInfo?.emoji} {cityInfo?.label} — {cityInfo?.sub}
                 <span style={{fontSize:11,color:C.dim,fontFamily:"Arial,sans-serif",marginLeft:8}}>{spots.length} SPOTS</span>
-              </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginLeft:"auto"}}>
+              </div>}
+              <div className="scroll-x" style={{gap:4,marginLeft:isMobile?"0":"auto",flexShrink:isMobile?0:undefined}}>
                 {CATS.map(c=>{
                   const active=cat===c.id;
                   return (
                     <button key={c.id} onClick={()=>{setCat(c.id);setExpanded(null);}}
-                      style={{background:active?c.color+"22":"transparent",border:`1px solid ${active?c.color:C.border}`,color:active?c.color:C.muted,fontFamily:"Arial,sans-serif",fontWeight:active?700:400,fontSize:10,letterSpacing:"0.06em",padding:"3px 9px",cursor:"pointer",borderRadius:20,transition:"all 0.15s"}}>
+                      style={{background:active?c.color+"22":"transparent",border:`1px solid ${active?c.color:C.border}`,color:active?c.color:C.muted,fontFamily:"Arial,sans-serif",fontWeight:active?700:400,fontSize:10,letterSpacing:"0.06em",padding:"3px 9px",cursor:"pointer",borderRadius:20,transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0}}>
                       {c.label}
                     </button>
                   );
@@ -1261,30 +1286,37 @@ export default function JapanGuide() {
               </div>
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:16,alignItems:"start"}}>
-              <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"calc(100vh - 300px)",overflowY:"auto",paddingRight:4,paddingBottom:40}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1fr) minmax(0,1fr)",gap:16,alignItems:"start"}}>
+              {isMobile && (
+                <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"250px",marginBottom:4}}>
+                  <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
+                </div>
+              )}
+              <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:isMobile?"none":"calc(100vh - 300px)",overflowY:isMobile?"visible":"auto",paddingRight:isMobile?0:4,paddingBottom:40}}>
                 {spots.map((spot,i)=>{
                   const id=`${city}-${i}`;
                   return <SpotCard key={id} spot={spot} cityId={city} idx={i} isOpen={expanded===id} isActive={activePin===i} onToggle={()=>toggle(id,i)}/>;
                 })}
               </div>
-              <div style={{position:"sticky",top:182,height:"calc(100vh - 300px)"}}>
-                <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:6}}>
-                  {CATS.filter(c=>c.id!=="all").map(c=>(
-                    <div key={c.id} style={{display:"flex",alignItems:"center",gap:3,background:c.color+"12",border:`1px solid ${c.color}33`,borderRadius:10,padding:"1px 6px"}}>
-                      <div style={{width:6,height:6,borderRadius:"50%",background:c.color}}/>
-                      <span style={{fontSize:9,color:c.color,fontWeight:600}}>{c.label}</span>
+              {!isMobile && (
+                <div style={{position:"sticky",top:182,height:"calc(100vh - 300px)"}}>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:6}}>
+                    {CATS.filter(c=>c.id!=="all").map(c=>(
+                      <div key={c.id} style={{display:"flex",alignItems:"center",gap:3,background:c.color+"12",border:`1px solid ${c.color}33`,borderRadius:10,padding:"1px 6px"}}>
+                        <div style={{width:6,height:6,borderRadius:"50%",background:c.color}}/>
+                        <span style={{fontSize:9,color:c.color,fontWeight:600}}>{c.label}</span>
+                      </div>
+                    ))}
+                    <div style={{display:"flex",alignItems:"center",gap:3,background:"#FFE56612",border:"1px solid #FFE56633",borderRadius:10,padding:"1px 6px"}}>
+                      <div style={{width:6,height:6,background:"#FFE566",transform:"rotate(45deg)"}}/>
+                      <span style={{fontSize:9,color:"#FFE566",fontWeight:600}}>⭐ MY FINDS</span>
                     </div>
-                  ))}
-                  <div style={{display:"flex",alignItems:"center",gap:3,background:"#FFE56612",border:"1px solid #FFE56633",borderRadius:10,padding:"1px 6px"}}>
-                    <div style={{width:6,height:6,background:"#FFE566",transform:"rotate(45deg)"}}/>
-                    <span style={{fontSize:9,color:"#FFE566",fontWeight:600}}>⭐ MY FINDS</span>
+                  </div>
+                  <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"420px"}}>
+                    <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
                   </div>
                 </div>
-                <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"420px"}}>
-                  <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
-                </div>
-              </div>
+              )}
             </div>
 
             <div style={{borderTop:`1px solid ${C.border}`,padding:"18px 0 40px",marginTop:12,display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:10}}>
