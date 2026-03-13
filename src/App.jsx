@@ -317,7 +317,6 @@ hiroshima:[
   {cat:"arcade",tourist:0,lat:34.6620,lng:135.5004,name:"GIGO NAMBA (FORMERLY SEGA)",
    desc:"Former Sega flagship, now GiGO-branded but same DNA. Excellent crane game selection, rhythm games, and a reasonably serious fighting game community.",
    tip:"The crane games here are some of the best-stocked in Osaka for anime merch.",hours:"10:00–00:00",addr:"Namba, Chuo Ward, Osaka"},
-],
 
   // ── ONSEN
   {cat:"onsen",tourist:0,lat:34.3958,lng:132.4553,name:"SENTO NAKA (HIROSHIMA)",
@@ -333,6 +332,7 @@ hiroshima:[
   {cat:"arcade",tourist:0,lat:34.3960,lng:132.4566,name:"GIGO HIROSHIMA",
    desc:"GiGO arcade on the Hondori strip. Multiple floors including rhythm games, fighting games and extensive crane section. Busy with students in the evenings.",
    tip:"Evenings are best for people-watching at the fighting game cabinets.",hours:"10:00–00:00",addr:"Hondori, Naka Ward, Hiroshima"},
+],
 
 west:[
   {cat:"hidden",tourist:0,lat:34.4084,lng:133.2050,name:"ONOMICHI HILLSIDE BACK ALLEYS",
@@ -396,7 +396,6 @@ west:[
   {cat:"food",tourist:0,lat:34.6960,lng:135.1922,name:"MOURIYA HONTEN (EST. 1885)",hours:"11:30–21:00",price:3,
    desc:"The original Kobe beef restaurant, established 1885. This is where Kobe beef as a restaurant concept began.",
    tip:"Book ahead for dinner. The lunch sirloin set is genuinely excellent.",addr:"2-1-17 Shimoyamatedori, Chuo Ward, Kobe"},
-],
 
   // ── ONSEN
   {cat:"onsen",tourist:1,lat:34.7982,lng:135.2454,name:"ARIMA ONSEN (KOBE)",
@@ -409,6 +408,7 @@ west:[
   {cat:"arcade",tourist:0,lat:34.6903,lng:135.1877,name:"ROUND1 KOBE (SANNOMIYA)",
    desc:"Round1's Kobe anchor. Sannomiya station area. Full entertainment package — rhythm games, bowling, billiards, purikura. Good rhythm game machines for a non-Tokyo city.",
    tip:"Open late. Busier Thu–Sun evenings.",hours:"10:00–02:00 wkdays, 10:00–05:00 Fri/Sat",addr:"Sannomiya, Chuo Ward, Kobe"},
+],
 
 kyoto:[
   {cat:"rave",tourist:0,lat:35.0110,lng:135.7690,name:"METRO KYOTO",
@@ -521,7 +521,6 @@ kyoto:[
   {cat:"food",tourist:0,lat:35.0044,lng:135.7651,name:"NISHIKI MARKET FOOD STALLS",hours:"8:00–18:00",price:1,
    desc:"Go at 8am for the local experience. Fresh yuba, grilled skewers, sesame dango, pickled vegetables, tamagoyaki.",
    tip:"The stalls at the east end are most authentic. Tofu donut stall sells out by 10am.",addr:"Nishiki Market, Nakagyo Ward"},
-],
 
   // ── ONSEN
   {cat:"onsen",tourist:0,lat:35.0358,lng:135.7280,name:"FUNAOKA ONSEN (千年湯)",
@@ -543,6 +542,7 @@ kyoto:[
   {cat:"arcade",tourist:0,lat:35.0048,lng:135.7693,name:"TAITO STATION KYOTO",
    desc:"Taito's Kyoto arcade. Good crane game selection stocked with Kyoto-themed merchandise and anime goods. Rhythm games functional. Worth a circuit before the evening bar hop.",
    tip:"10:00–23:00.",hours:"10:00–23:00",addr:"Shijo area, Shimogyo Ward, Kyoto"},
+],
 
 nagoya:[
   {cat:"hidden",tourist:1,lat:35.1830,lng:137.0880,name:"GHIBLI PARK",
@@ -593,7 +593,6 @@ fuji:[
   {cat:"food",tourist:0,lat:35.5133,lng:138.7515,name:"KAWAGUCHIKO SOBA SHOPS",hours:"11:00–17:00",price:2,
    desc:"The Fuji Five Lakes region has excellent buckwheat soba. Several small shops near the lakefront serve cold or hot soba with mountain vegetable tempura.",
    tip:"Yamadaya near the lake is consistently the best. Order zaru (cold) soba in spring.",addr:"Lakefront area, Kawaguchiko"},
-],
 
   // ── ONSEN
   {cat:"onsen",tourist:0,lat:35.5169,lng:138.7467,name:"TSUBAKI NO YU (KAWAGUCHIKO)",
@@ -605,6 +604,7 @@ fuji:[
   {cat:"onsen",tourist:0,lat:35.2315,lng:139.0970,name:"TENZAN TOHJI-KYO (HAKONE)",
    desc:"A step above Yunessun in quality and atmosphere. Riverside open-air baths in a forest setting. Multiple temperature pools. Tattoo policy is more relaxed than average — check current policy on your visit date.",
    tip:"¥1,300 entry. Smaller, quieter and more beautiful than Yunessun. 10 mins by taxi from Hakone-Yumoto station.",hours:"9:00–22:00",addr:"208 Yumoto, Hakone, Ashigarashimo District"},
+],
 
 tokyo:[
   // ── RAVES
@@ -957,7 +957,7 @@ export default function JapanGuide() {
         }
         const combined = {};
         for (const c of CITIES_WX) {
-          const url = \`https://api.open-meteo.com/v1/forecast?latitude=\${c.lat}&longitude=\${c.lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=Asia%2FTokyo&start_date=2026-03-26&end_date=2026-04-15\`;
+          const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=Asia%2FTokyo&start_date=2026-03-26&end_date=2026-04-15`;
           const res = await fetch(url);
           if (!res.ok) continue;
           const j = await res.json();
