@@ -1,3 +1,10 @@
+window.storage = {
+  get: async (k) => { try { const v = localStorage.getItem(k); return v ? {value: v} : null; } catch { return null; } },
+  set: async (k, v) => { try { localStorage.setItem(k, v); return {value: v}; } catch { return null; } },
+  delete: async (k) => { try { localStorage.removeItem(k); return {deleted: true}; } catch { return null; } },
+  list: async () => { return {keys: []}; }
+};
+
 import { useState, useMemo, useEffect, useRef } from "react";
 
 const C = {
@@ -39,7 +46,9 @@ const CATS = [
   {id:"hidden",  label:"🔍 HIDDEN",         color:C.orange},
   {id:"food",    label:"🍜 FOOD",           color:C.food},
   {id:"onsen",   label:"♨️ BATHS/ONSEN",    color:"#00CFCF"},
-  {id:"arcade",  label:"🕹️ ARCADES",         color:"#B8FF47"},
+  {id:"arcade",      label:"🕹️ ARCADES",         color:"#B8FF47"},
+  {id:"sightseeing", label:"🏯 SIGHTSEEING",     color:"#FFD700"},
+  {id:"gamecentre",  label:"🕹️ GAME CENTRES",    color:"#00E5FF"},
 ];
 const CAT_MAP = Object.fromEntries(CATS.map(c=>[c.id,c]));
 
@@ -247,6 +256,68 @@ osaka:[
   {cat:"food",tourist:0,lat:34.6720,lng:135.5220,name:"TSURUHASHI YAKINIKU MARKET",hours:"11:00–21:00",price:2,
    desc:"Osaka's original Korean-Japanese yakiniku district. Covered market since the postwar era. Dozens of tiny grill restaurants, extraordinary beef at reasonable prices.",
    tip:"Walk into the covered market and pick any packed restaurant.",addr:"Tsuruhashi, Ikuno Ward"},
+  // ── ONSEN
+  {cat:"onsen",tourist:1,lat:34.6558,lng:135.5063,name:"SPA WORLD NAMBA",
+   desc:"10-floor mega-bath complex in Namba. Each floor is a different country's bathing culture: Roman, Atlantis, European, Asian. Jacuzzis, saunas, waterfalls, cold plunges. The most maximalist bath experience in Japan.",
+   tip:"Open 10:00–08:45 next day. Around ¥1,000–1,500 entry. Rental towels available. Tattoos OK on some floors.",hours:"10:00–08:45 (next day)",addr:"3-4-24 Ebisuhigashi, Naniwa Ward, Osaka"},
+  {cat:"onsen",tourist:0,lat:34.6735,lng:135.5014,name:"NAMBA NO YU",
+   desc:"New-era sento in central Osaka. Clean, modern, multiple baths and a proper sauna. Locals come here to decompress after work. Much more authentic atmosphere than Spa World.",
+   tip:"17:00–01:00. Around ¥600–800 entry. Bring flip-flops.",hours:"17:00–01:00",addr:"Nishi-Shinsaibashi, Chuo Ward, Osaka"},
+  // ── SIGHTSEEING
+  {cat:"sightseeing",tourist:1,lat:34.6873,lng:135.5262,name:"OSAKA CASTLE",
+   desc:"16th century feudal castle with a museum inside. The free surrounding grounds are spectacular for cherry blossoms in late March — Osaka Castle Park is one of the best blossom spots in the city.",
+   tip:"Grounds are free. ¥600 for museum entry. Go early to beat the tour groups.",
+   hours:"9:00–17:00",addr:"1-1 Osakajo, Chuo Ward, Osaka"},
+  {cat:"sightseeing",tourist:1,lat:34.6538,lng:135.5160,name:"SHITENNOJI TEMPLE",
+   desc:"Japan's oldest Buddhist temple, founded 593 AD by Prince Shotoku. A working temple complex with a beautiful inner garden and pagoda. Extraordinary history in the middle of the city.",
+   tip:"¥300 entry to inner garden. Free to visit the outer precincts. Much less crowded than Nara.",
+   hours:"8:30–16:30",addr:"1-11-18 Shitennoji, Tennoji Ward, Osaka"},
+  {cat:"sightseeing",tourist:1,lat:34.6130,lng:135.4930,name:"SUMIYOSHI TAISHA",
+   desc:"One of Japan's oldest and most important shrines (est. 211 AD), predating Buddhism in Japan. Iconic arched bridge (Sorihashi) and stunning cherry blossoms in late March. Almost no foreign tourists.",
+   tip:"Arrive before 8am. Combine with Sumiyoshi Park walk. 15 min on Nankai from Namba.",
+   hours:"6:00–17:00",addr:"2-9-89 Sumiyoshi, Sumiyoshi Ward, Osaka"},
+  {cat:"sightseeing",tourist:1,lat:34.6687,lng:135.5013,name:"DOTONBORI CANAL AREA",
+   desc:"Osaka's iconic neon-lit canal walk. Glico running man sign, giant crab sculptures, bridge lanterns. The sensory overload is the point. Best at night for full effect.",
+   tip:"Walk the full length at night. Early morning (6–7am) is surprisingly peaceful — just locals and deliveries.",
+   hours:"24hr",addr:"Dotonbori, Chuo Ward, Osaka"},
+  {cat:"sightseeing",tourist:1,lat:34.6523,lng:135.5063,name:"SHINSEKAI RETRO DISTRICT",
+   desc:"1920s entertainment district built to evoke Paris and New York simultaneously. Tsutenkaku tower, kushikatsu restaurants, pachinko halls and old betting cafes. Frozen in Showa-era charm.",
+   tip:"Go at night for the neon glow. Spa World is right next door. Avoid weekends for the quieter backstreets.",
+   hours:"varies by shop",addr:"Shinsekai, Naniwa Ward, Osaka"},
+  {cat:"onsen",tourist:0,lat:34.7120,lng:135.5100,name:"SAUNA RESET & SPA (OSAKA)",
+   desc:"A contemporary sauna-focused bath house popular with Osaka's creative scene. Finnish-style dry sauna, proper cold plunge, lounge area. The sauna circuit here is taken seriously.",
+   tip:"Check hours. Sauna enthusiasts call this the best cold plunge in Osaka.",hours:"varies",addr:"Kita Ward, Osaka"},
+  // ── ARCADE
+  {cat:"arcade",tourist:0,lat:34.6624,lng:135.5001,name:"ROUND1 STADIUM NAMBA",
+   desc:"The most comprehensive entertainment complex in Osaka. Floors dedicated to: rhythm games (WACCA, Sound Voltex, Jubeat), crane games, purikura, sports simulators, bowling. Dedicated retro corner with original PCBs.",
+   tip:"Open till 5am on weekends. The rhythm game floor is world-class — bring headphones.",hours:"10:00–05:00 Fri/Sat, 10:00–02:00 wkdays",addr:"Shinsaibashi, Chuo Ward, Osaka"},
+  {cat:"arcade",tourist:0,lat:34.6627,lng:135.5006,name:"TAITO STATION NAMBA",
+   desc:"Major Taito arcade in the Namba thick of it. Strong on medal games and UFO catchers, plus a solid fighting game and rhythm game section.",
+   tip:"Multiple floors. Medal game floor gives you something to do if the fighting game floor is packed.",hours:"10:00–00:00",addr:"Namba, Chuo Ward, Osaka"},
+  {cat:"arcade",tourist:0,lat:34.6620,lng:135.5004,name:"GIGO NAMBA (FORMERLY SEGA)",
+   desc:"Former Sega flagship, now GiGO-branded but same DNA. Excellent crane game selection, rhythm games, and a reasonably serious fighting game community.",
+   tip:"The crane games here are some of the best-stocked in Osaka for anime merch.",hours:"10:00–00:00",addr:"Namba, Chuo Ward, Osaka"},
+  // ── GAME CENTRES
+  {cat:"gamecentre",tourist:0,lat:34.6654,lng:135.5014,name:"ROUND1 STADIUM NAMBA",
+   desc:"The most comprehensive entertainment complex in Osaka. Multiple floors: rhythm games (WACCA, Sound Voltex, Jubeat), sports simulators, dedicated retro corner with original PCBs, crane games, purikura, bowling. Open until 5am on Fri/Sat.",
+   tip:"Open till 5am on weekends — the rhythm game floor is world-class. The retro corner has genuinely playable original hardware.",
+   hours:"10:00–05:00 Fri/Sat, 10:00–02:00 wkdays",addr:"Shinsaibashi, Chuo Ward, Osaka"},
+  {cat:"gamecentre",tourist:0,lat:34.6644,lng:135.5005,name:"TAITO STATION NAMBA",
+   desc:"Major Taito arcade in the heart of Namba. Strong fighting game and rhythm game section, UFO catchers and crane games well-stocked with anime merch.",
+   tip:"Multiple floors. The medal game floor is good if the fighting game section is packed.",
+   hours:"10:00–00:00",addr:"Namba, Chuo Ward, Osaka"},
+  {cat:"gamecentre",tourist:0,lat:34.6642,lng:135.5003,name:"GIGO NAMBA",
+   desc:"Former Sega flagship, now GiGO-branded. Excellent crane game selection, rhythm games, and an active fighting game community. The crane games are some of the best-stocked in Osaka.",
+   tip:"Former Sega DNA means quality machine maintenance. The fighting game cabinets attract a local competitive scene.",
+   hours:"10:00–00:00",addr:"Namba, Chuo Ward, Osaka"},
+  {cat:"gamecentre",tourist:0,lat:34.6512,lng:135.5056,name:"ATHENA NIPPOMBASHI",
+   desc:"Fighting game specialist near Den Den Town. BlazBlue, Persona Arena, Guilty Gear, Street Fighter tournaments run regularly. 11:00–23:00. The serious competitive fighting game community in Osaka comes here.",
+   tip:"Check their schedule for tournaments — the competition level is very high. Staff are hardcore players.",
+   hours:"11:00–23:00",addr:"Nippombashi, Naniwa Ward, Osaka"},
+  {cat:"gamecentre",tourist:0,lat:34.7050,lng:135.4980,name:"ROUND1 UMEDA",
+   desc:"Round1's north Osaka/Umeda location. Full entertainment package — rhythm games, sports simulators, bowling, purikura. Convenient for the Nakazakicho/Compufunk evening run.",
+   tip:"Open until 2am. Pair with Compufunk Records nearby for a north Osaka music and games evening.",
+   hours:"10:00–02:00",addr:"Umeda, Kita Ward, Osaka"},
 ],
 
 hiroshima:[
@@ -297,27 +368,27 @@ hiroshima:[
    desc:"Hiroshima produces 60% of Japan's oysters. Tiny standing bars serve them raw, grilled or as oyster ramen for a few hundred yen. Complete locals' territory.",
    tip:"Just point and say 'kaki'. Any bar with a crowd outside at night.",addr:"Nagarekawa district, Naka Ward"},
 
-  // ── ONSEN
-  {cat:"onsen",tourist:1,lat:34.6558,lng:135.5063,name:"SPA WORLD NAMBA",
-   desc:"10-floor mega-bath complex in Namba. Each floor is a different country's bathing culture: Roman, Atlantis, European, Asian. Jacuzzis, saunas, waterfalls, cold plunges. The most maximalist bath experience in Japan.",
-   tip:"Open 10:00–08:45 next day. Around ¥1,000–1,500 entry. Rental towels available. Tattoos OK on some floors.",hours:"10:00–08:45 (next day)",addr:"3-4-24 Ebisuhigashi, Naniwa Ward, Osaka"},
-  {cat:"onsen",tourist:0,lat:34.6735,lng:135.5014,name:"NAMBA NO YU",
-   desc:"New-era sento in central Osaka. Clean, modern, multiple baths and a proper sauna. Locals come here to decompress after work. Much more authentic atmosphere than Spa World.",
-   tip:"17:00–01:00. Around ¥600–800 entry. Bring flip-flops.",hours:"17:00–01:00",addr:"Nishi-Shinsaibashi, Chuo Ward, Osaka"},
-  {cat:"onsen",tourist:0,lat:34.7120,lng:135.5100,name:"SAUNA RESET & SPA (OSAKA)",
-   desc:"A contemporary sauna-focused bath house popular with Osaka's creative scene. Finnish-style dry sauna, proper cold plunge, lounge area. The sauna circuit here is taken seriously.",
-   tip:"Check hours. Sauna enthusiasts call this the best cold plunge in Osaka.",hours:"varies",addr:"Kita Ward, Osaka"},
-  // ── ARCADE
-  {cat:"arcade",tourist:0,lat:34.6624,lng:135.5001,name:"ROUND1 STADIUM NAMBA",
-   desc:"The most comprehensive entertainment complex in Osaka. Floors dedicated to: rhythm games (WACCA, Sound Voltex, Jubeat), crane games, purikura, sports simulators, bowling. Dedicated retro corner with original PCBs.",
-   tip:"Open till 5am on weekends. The rhythm game floor is world-class — bring headphones.",hours:"10:00–05:00 Fri/Sat, 10:00–02:00 wkdays",addr:"Shinsaibashi, Chuo Ward, Osaka"},
-  {cat:"arcade",tourist:0,lat:34.6627,lng:135.5006,name:"TAITO STATION NAMBA",
-   desc:"Major Taito arcade in the Namba thick of it. Strong on medal games and UFO catchers, plus a solid fighting game and rhythm game section.",
-   tip:"Multiple floors. Medal game floor gives you something to do if the fighting game floor is packed.",hours:"10:00–00:00",addr:"Namba, Chuo Ward, Osaka"},
-  {cat:"arcade",tourist:0,lat:34.6620,lng:135.5004,name:"GIGO NAMBA (FORMERLY SEGA)",
-   desc:"Former Sega flagship, now GiGO-branded but same DNA. Excellent crane game selection, rhythm games, and a reasonably serious fighting game community.",
-   tip:"The crane games here are some of the best-stocked in Osaka for anime merch.",hours:"10:00–00:00",addr:"Namba, Chuo Ward, Osaka"},
-
+  // ── SIGHTSEEING
+  {cat:"sightseeing",tourist:1,lat:34.3955,lng:132.4530,name:"PEACE MEMORIAL MUSEUM",
+   desc:"Essential. One of the most important museums in the world. Documents the August 6 1945 atomic bombing in unflinching detail. Allow 3–4 hours minimum.",
+   tip:"Book tickets online — queues can be 90+ minutes without. Audio guide recommended. The personal effects section is the most affecting.",
+   hours:"8:30–18:00 (Aug until 19:00)",addr:"1-2 Nakajimacho, Naka Ward, Hiroshima"},
+  {cat:"sightseeing",tourist:1,lat:34.3955,lng:132.4533,name:"A-BOMB DOME (GENBAKU DOME)",
+   desc:"The preserved shell of the Industrial Promotion Hall — the only structure near the hypocenter to remain standing. UNESCO World Heritage Site. Haunting and unmissable.",
+   tip:"Visit at dawn before crowds arrive. The reflection in the Motoyasu River at sunrise is extraordinary.",
+   hours:"24hr (exterior)",addr:"1-10 Otemachi, Naka Ward, Hiroshima"},
+  {cat:"sightseeing",tourist:1,lat:34.3941,lng:132.4524,name:"PEACE MEMORIAL PARK",
+   desc:"The park surrounding the A-Bomb Dome and Peace Memorial Museum. Cherry blossoms in late March are stunning. The Children's Peace Monument has thousands of origami crane garlands.",
+   tip:"Walk the entire park early morning. The Flame of Peace has burned continuously since 1964, waiting until all nuclear weapons are eliminated.",
+   hours:"24hr",addr:"Nakajimacho, Naka Ward, Hiroshima"},
+  {cat:"sightseeing",tourist:1,lat:34.2958,lng:132.3194,name:"MIYAJIMA / ITSUKUSHIMA SHRINE",
+   desc:"The floating torii gate at high tide is one of Japan's three most iconic views. Free-roaming deer everywhere on the island. Ropeway up Mt Misen for Seto Inland Sea views.",
+   tip:"Check tide tables for the floating gate. First ferry at dawn. Deer are completely wild — respectful distance.",
+   hours:"6:30–18:00",addr:"1-1 Miyajimacho, Hatsukaichi, Hiroshima"},
+  {cat:"sightseeing",tourist:1,lat:34.4021,lng:132.4597,name:"HIROSHIMA CASTLE",
+   desc:"Reconstructed 16th century castle (original destroyed by the atomic bomb). Museum inside covers feudal history of the Chugoku region. Good cherry blossom viewing in the grounds.",
+   tip:"¥370 entry. Combine with the Peace Park for a full Hiroshima day.",
+   hours:"9:00–18:00 (Oct–Mar until 17:00)",addr:"21-1 Motomachi, Naka Ward, Hiroshima"},
   // ── ONSEN
   {cat:"onsen",tourist:0,lat:34.3958,lng:132.4553,name:"SENTO NAKA (HIROSHIMA)",
    desc:"Hiroshima's most beloved traditional sento near the Peace Park area. Original tiling, old-school atmosphere, very local crowd. A real neighbourhood bath not listed in any tourist guide.",
@@ -332,6 +403,15 @@ hiroshima:[
   {cat:"arcade",tourist:0,lat:34.3960,lng:132.4566,name:"GIGO HIROSHIMA",
    desc:"GiGO arcade on the Hondori strip. Multiple floors including rhythm games, fighting games and extensive crane section. Busy with students in the evenings.",
    tip:"Evenings are best for people-watching at the fighting game cabinets.",hours:"10:00–00:00",addr:"Hondori, Naka Ward, Hiroshima"},
+  // ── GAME CENTRES
+  {cat:"gamecentre",tourist:0,lat:34.3960,lng:132.4575,name:"TAITO STATION HIROSHIMA",
+   desc:"Hiroshima's main Taito arcade on the Hondori strip. Rhythm games, crane games stocked with anime and regional goods. Good for killing an hour between Peace Museum visits.",
+   tip:"Great for rhythm games between museum visits. The crane section has Hiroshima-regional goods you won't find elsewhere.",
+   hours:"10:00–22:00",addr:"Hondori, Naka Ward, Hiroshima"},
+  {cat:"gamecentre",tourist:0,lat:34.3951,lng:132.4558,name:"GIGO HIROSHIMA",
+   desc:"GiGO arcade on the Hondori strip. Multiple floors including rhythm games, fighting games and an extensive crane game section. Busy with local students in the evenings.",
+   tip:"Evenings are best for the atmosphere and watching fighting game competition.",
+   hours:"10:00–23:00",addr:"Hondori, Naka Ward, Hiroshima"},
 ],
 
 west:[
@@ -397,6 +477,27 @@ west:[
    desc:"The original Kobe beef restaurant, established 1885. This is where Kobe beef as a restaurant concept began.",
    tip:"Book ahead for dinner. The lunch sirloin set is genuinely excellent.",addr:"2-1-17 Shimoyamatedori, Chuo Ward, Kobe"},
 
+  // ── SIGHTSEEING
+  {cat:"sightseeing",tourist:1,lat:34.8394,lng:134.6939,name:"HIMEJI CASTLE",
+   desc:"⚠ UNESCO World Heritage Site. The White Heron Castle is Japan's finest surviving feudal castle — never destroyed or burnt. Surrounded by cherry blossoms in late March, the timing is extraordinary.",
+   tip:"Book tickets online. Arrive before 9am. The inner keep climb is steep but the view from the top floor is worth every step.",
+   hours:"9:00–17:00 (16:00 last entry)",addr:"68 Honmachi, Himeji, Hyogo"},
+  {cat:"sightseeing",tourist:1,lat:34.4086,lng:133.1965,name:"ONOMICHI SENKOJI TEMPLE",
+   desc:"Hilltop temple above Onomichi reached by a short ropeway. Panoramic views of the Onomichi Channel and Innoshima Island. The hillside path connects 25 temples through the cat colony.",
+   tip:"Take the ropeway up, walk the temple trail down through cat territory. Morning light on the channel is spectacular.",
+   hours:"9:00–17:00",addr:"Senkoji Park, Onomichi, Hiroshima"},
+  {cat:"sightseeing",tourist:1,lat:34.5952,lng:133.7721,name:"KURASHIKI BIKAN HISTORICAL QUARTER",
+   desc:"Preserved Edo-era white-walled warehouses (kura) along a willow-lined canal. The Ohara Museum inside has a surprising Western art collection including Monet, El Greco and Renoir.",
+   tip:"Go first thing in the morning before tour buses. Evening canal walks with reflections are also excellent.",
+   hours:"varies by attraction",addr:"Bikan, Kurashiki, Okayama"},
+  {cat:"sightseeing",tourist:1,lat:34.6652,lng:133.9344,name:"OKAYAMA CASTLE",
+   desc:"Known as 'Crow Castle' for its distinctive black exterior — rare in Japan where most castles are white. Adjacent Korakuen garden is rated one of Japan's top three.",
+   tip:"Combine with Korakuen garden — combo ticket available. Garden is especially beautiful in cherry blossom season.",
+   hours:"9:00–17:30",addr:"2-3-1 Marunouchi, Kita Ward, Okayama"},
+  {cat:"sightseeing",tourist:0,lat:34.7000,lng:135.1894,name:"KOBE KITANO IJINKAN",
+   desc:"Historic foreign settlement houses (ijinkan) from the Meiji era when Kobe was Japan's main international port. Several preserved residences open to visitors with period furnishings.",
+   tip:"Walk the Kitano Ijinkan district — some houses are free to view externally. Combine with the vintage circuit below.",
+   hours:"9:00–18:00 (varies by house)",addr:"Kitanocho, Chuo Ward, Kobe"},
   // ── ONSEN
   {cat:"onsen",tourist:1,lat:34.7982,lng:135.2454,name:"ARIMA ONSEN (KOBE)",
    desc:"⚠ One of Japan's three oldest and most celebrated hot spring towns, 30 mins from Kobe. Two distinct spring types: Kinsen (gold spring — iron-rich, orange, said to cure joint pain) and Ginsen (silver spring — radium/carbonic, colourless). Multiple bathhouses scattered through a hillside village.",
@@ -409,7 +510,6 @@ west:[
    desc:"Round1's Kobe anchor. Sannomiya station area. Full entertainment package — rhythm games, bowling, billiards, purikura. Good rhythm game machines for a non-Tokyo city.",
    tip:"Open late. Busier Thu–Sun evenings.",hours:"10:00–02:00 wkdays, 10:00–05:00 Fri/Sat",addr:"Sannomiya, Chuo Ward, Kobe"},
 ],
-
 kyoto:[
   {cat:"rave",tourist:0,lat:35.0110,lng:135.7690,name:"METRO KYOTO",
    desc:"Kyoto's most important underground club since 1995. Small (400 cap), basement, Marutamachi station. Genuinely interesting nights — experimental electronics, occasional jungle and breaks.",
@@ -522,6 +622,49 @@ kyoto:[
    desc:"Go at 8am for the local experience. Fresh yuba, grilled skewers, sesame dango, pickled vegetables, tamagoyaki.",
    tip:"The stalls at the east end are most authentic. Tofu donut stall sells out by 10am.",addr:"Nishiki Market, Nakagyo Ward"},
 
+  // ── SIGHTSEEING
+  {cat:"sightseeing",tourist:1,lat:34.9671,lng:135.7727,name:"FUSHIMI INARI TAISHA",
+   desc:"Thousands of vermilion torii gates winding up a forested mountain. One of Japan's most photographed sites — but at 5am before dawn, it's eerie and extraordinary.",
+   tip:"Arrive before 6am to avoid crowds. Full summit hike 2–3 hours. Bring a head torch. This IS worth the 4:30am alarm.",
+   hours:"24hr",addr:"68 Fukakusa Yabunouchicho, Fushimi Ward, Kyoto"},
+  {cat:"sightseeing",tourist:1,lat:35.0394,lng:135.7292,name:"KINKAKUJI GOLDEN PAVILION",
+   desc:"The golden temple reflected in Kyokochi Mirror Pond. One of Japan's most iconic images. The garden surrounding it is meticulously maintained.",
+   tip:"Arrive at opening (9am) for shortest queues. Combine with Ryoanji rock garden 10 min walk away.",
+   hours:"9:00–17:00",addr:"1 Kinkakujicho, Kita Ward, Kyoto"},
+  {cat:"sightseeing",tourist:1,lat:35.0170,lng:135.6720,name:"ARASHIYAMA BAMBOO GROVE",
+   desc:"Dense bamboo grove with towering stalks blocking the sky. The light filtering through the canopy in early morning is extraordinary. Combine with Tenryuji garden and cormorant fishing bridge.",
+   tip:"Go before 7am. After that it's crowded. The path takes 15 minutes end to end — do it twice.",
+   hours:"24hr (best before 7am)",addr:"Sagaogurayama, Ukyo Ward, Kyoto"},
+  {cat:"sightseeing",tourist:1,lat:35.0037,lng:135.7757,name:"GION DISTRICT",
+   desc:"Kyoto's preserved geisha district. Stone-paved Hanamikoji street with machiya townhouses, ochaya (tea houses), and Yasaka Shrine at the southern end. Evening is best for atmosphere.",
+   tip:"Geishas (actually maiko) emerge around 5–6pm heading to engagements. Do not photograph them without permission.",
+   hours:"24hr",addr:"Gion, Higashiyama Ward, Kyoto"},
+  {cat:"sightseeing",tourist:0,lat:35.0050,lng:135.7656,name:"NISHIKI MARKET",
+   desc:"A narrow 400-metre covered market running through central Kyoto — called 'Kyoto's Kitchen'. Fresh yuba, grilled skewers, sesame dango, pickled vegetables, tamagoyaki.",
+   tip:"Best before 10am when it's locals only. The tofu donut stall sells out early. The eastern section is most authentic.",
+   hours:"8:00–18:00",addr:"Nishiki Market, Nakagyo Ward, Kyoto"},
+  {cat:"sightseeing",tourist:0,lat:35.0270,lng:135.7932,name:"PHILOSOPHER'S PATH",
+   desc:"A canal-side walking path lined with hundreds of cherry trees. One of Japan's most celebrated cherry blossom walks, named after philosopher Nishida Kitaro who walked it daily.",
+   tip:"Peak bloom early April — timing is perfect. Walk the full 2km from Ginkakuji south to Nanzenji.",
+   hours:"24hr",addr:"Philosopher's Path, Sakyo Ward, Kyoto"},
+  // ── NARA sightseeing
+  {cat:"sightseeing",tourist:1,lat:34.6888,lng:135.8398,name:"TODAI-JI TEMPLE",
+   desc:"Japan's largest wooden building, containing the world's largest bronze Buddha (15 metres, 500 tons). Over 1,200 free-roaming sacred deer in the surrounding park.",
+   tip:"¥600 entry. Go at dawn before school trips arrive. The deer actually bow when they want crackers.",
+   hours:"7:30–17:30 (seasonal variation)",addr:"406-1 Zoshicho, Nara"},
+  {cat:"sightseeing",tourist:1,lat:34.6813,lng:135.8449,name:"KASUGA TAISHA",
+   desc:"Ancient Shinto shrine at the foot of Mt Mikasa. Lantern-lined approach paths through deer-filled forest. 3,000 bronze and stone lanterns lit at festival times.",
+   tip:"Inner garden (¥500 extra) has ancient wisteria. Morning mist in the cedar forest path is beautiful.",
+   hours:"6:00–18:00",addr:"160 Kasuganocho, Nara"},
+  // ── UJI sightseeing
+  {cat:"sightseeing",tourist:1,lat:34.8891,lng:135.8076,name:"BYODOIN TEMPLE PHOENIX HALL",
+   desc:"11th century temple pavilion — the image on Japan's 10-yen coin. Reflected perfectly in the pond in front. One of the most graceful buildings in Japan, a masterwork of Heian architecture.",
+   tip:"¥600 entry. Phoenix Hall interior requires a separate timed ticket (¥300) — book on arrival at the desk.",
+   hours:"8:30–17:30",addr:"116 Ujirengehuji, Uji City, Kyoto Pref."},
+  {cat:"sightseeing",tourist:1,lat:34.9031,lng:135.7987,name:"NINTENDO MUSEUM (UJI)",
+   desc:"⚠ BOOK TICKETS IN ADVANCE via lottery. Based in the original Nintendo playing card factory in Uji. Every console they ever made, interactive stations, incredible original artefacts from 1889 to present.",
+   tip:"Lottery opens monthly — book immediately at museum.nintendo.com. If no ticket, Byodoin and best matcha in Japan are still worth the Uji trip.",
+   hours:"10:00–18:00, closed Tue",addr:"1-1-2 Noda, Uji City, Kyoto Pref."},
   // ── ONSEN
   {cat:"onsen",tourist:0,lat:35.0358,lng:135.7280,name:"FUNAOKA ONSEN (千年湯)",
    desc:"Kyoto's most beloved traditional sento, operating continuously since the 10th century. Extraordinary Meiji-era interior: ornate carved wood, mosaic tiles depicting myths and battles, painted murals. The building alone is worth the trip. Multiple baths inside including a cold bath, electric bath and medicinal herbal bath.",
@@ -542,8 +685,16 @@ kyoto:[
   {cat:"arcade",tourist:0,lat:35.0048,lng:135.7693,name:"TAITO STATION KYOTO",
    desc:"Taito's Kyoto arcade. Good crane game selection stocked with Kyoto-themed merchandise and anime goods. Rhythm games functional. Worth a circuit before the evening bar hop.",
    tip:"10:00–23:00.",hours:"10:00–23:00",addr:"Shijo area, Shimogyo Ward, Kyoto"},
+  // ── GAME CENTRES
+  {cat:"gamecentre",tourist:0,lat:35.0046,lng:135.7691,name:"TAITO STATION KYOTO",
+   desc:"Kyoto's Taito arcade near Kawaramachi. Crane games stocked with Kyoto-themed merchandise and anime goods, rhythm games, medal games. Good for an hour between record shops.",
+   tip:"10:00–23:00. Worth a circuit before the Gion evening wander.",
+   hours:"10:00–23:00",addr:"Shijo-Kawaramachi, Shimogyo Ward, Kyoto"},
+  {cat:"gamecentre",tourist:0,lat:35.0041,lng:135.7685,name:"ROUND1 KYOTO KAWARAMACHI",
+   desc:"Round1's Kyoto location on the Shijo-Kawaramachi entertainment strip. Multiple floors of rhythm games, prize games, sports simulators. The rhythm game section has current cabinets.",
+   tip:"Ground floor has card game machines if you want to mix TCG hunting with arcade time.",
+   hours:"10:00–02:00",addr:"Shijo-Kawaramachi, Shimogyo Ward, Kyoto"},
 ],
-
 nagoya:[
   {cat:"hidden",tourist:1,lat:35.1830,lng:137.0880,name:"GHIBLI PARK",
    desc:"⚠ Requires booking 3 months ahead. Not a theme park — a walk-through immersive world. Beautifully designed.",
@@ -605,7 +756,6 @@ fuji:[
    desc:"A step above Yunessun in quality and atmosphere. Riverside open-air baths in a forest setting. Multiple temperature pools. Tattoo policy is more relaxed than average — check current policy on your visit date.",
    tip:"¥1,300 entry. Smaller, quieter and more beautiful than Yunessun. 10 mins by taxi from Hakone-Yumoto station.",hours:"9:00–22:00",addr:"208 Yumoto, Hakone, Ashigarashimo District"},
 ],
-
 tokyo:[
   // ── RAVES
   {cat:"rave",tourist:0,lat:35.6650,lng:139.7262,name:"VENT (OMOTESANDO)",
@@ -670,7 +820,7 @@ tokyo:[
   {cat:"records",tourist:0,lat:35.6614,lng:139.6680,name:"RECORD STATION (SHIMOKITAZAWA)",
    desc:"City pop, hip-hop, jazz, soul, disco, underground hip-hop and G-rap. Specifically called out as the Shimokitazawa shop for city pop crate digging. Also stocks Seoul disco and underground US rap.",
    tip:"13:00-20:00. The city pop section is why you came.",hours:"13:00-20:00",addr:"Shimokitazawa, Setagaya Ward, Tokyo"},
-  {cat:"records",tourist:0,lat:35.6609,lng:135.6669,name:"ELLA WAREHOUSE (SHIMOKITAZAWA)",
+  {cat:"records",tourist:0,lat:35.6609,lng:139.6669,name:"ELLA WAREHOUSE (SHIMOKITAZAWA)",
    desc:"12-inch ONLY record store. Funk, disco, hip-hop and club/dance. If you DJ or collect 12-inch dance music this shop is built for you. Reopened November 2022.",
    tip:"13:00-20:00, closed Mon & Tue. Entirely 12-inch - the most focused format shop on the trip.",hours:"13:00-20:00, closed Mon & Tue",addr:"Shimokitazawa, Setagaya Ward, Tokyo"},
   {cat:"records",tourist:0,lat:35.6617,lng:139.6677,name:"DISK UNION CLUB MUSIC (SHIMOKITAZAWA)",
@@ -691,7 +841,7 @@ tokyo:[
   {cat:"records",tourist:0,lat:35.7057,lng:139.6502,name:"UNIVERSOUNDS (KOENJI)",
    desc:"Jazz and soul specialist in Koenji. Highly regarded. A quieter, more contemplative dig shop compared to the bustle of Shimokitazawa.",
    tip:"14:00-20:00.",hours:"14:00-20:00",addr:"Koenji, Suginami Ward, Tokyo"},
-  {cat:"records",tourist:0,lat:35.7050,lng:135.6498,name:"KURONEKO (黒猫) KOENJI",
+  {cat:"records",tourist:0,lat:35.7050,lng:139.6498,name:"KURONEKO (黒猫) KOENJI",
    desc:"Recoya calls it a 'special space in Koenji.' Beloved by regulars, mysterious to newcomers. The kind of shop where everyone inside is a serious collector.",
    tip:"13:00-20:00.",hours:"13:00-20:00",addr:"Koenji, Suginami Ward, Tokyo"},
   {cat:"records",tourist:0,lat:35.7058,lng:139.6493,name:"SUB STORE TOKYO (KOENJI)",
@@ -858,6 +1008,49 @@ tokyo:[
   {cat:"food",tourist:0,lat:35.7050,lng:139.6502,name:"KOENJI HAGURUMA IZAKAYA",hours:"17:00–midnight, closed Sun",price:2,
    desc:"Old-school izakaya serving slow-simmered offal, unusual yakitori cuts, sake by the carafe. Frequented by the local artist, musician and vintage crowd.",
    tip:"Point to whatever the table next to you has. Very cash-only, very local.",addr:"Koenji, Suginami Ward"},
+  // ── SIGHTSEEING
+  {cat:"sightseeing",tourist:1,lat:35.7148,lng:139.7967,name:"SENSO-JI TEMPLE ASAKUSA",
+   desc:"Tokyo's most visited temple and oldest, founded 628 AD. The Kaminarimon gate and Nakamise shopping street leading to the main hall are iconic Tokyo. Vibrant and atmospheric.",
+   tip:"Go at 6am before the crowds — the main hall opens at dawn and the atmosphere is genuinely moving. Combine with Nakamise market stalls.",
+   hours:"6:00–17:00 (grounds 24hr)",addr:"2-3-1 Asakusa, Taito Ward, Tokyo"},
+  {cat:"sightseeing",tourist:1,lat:35.6763,lng:139.6993,name:"MEIJI JINGU",
+   desc:"Tokyo's most important Shinto shrine, dedicated to Emperor Meiji. Set in 70 hectares of dense secondary forest in the middle of the city — feels completely removed from Tokyo.",
+   tip:"Inner garden (¥500) is worth it. Combine with Harajuku visit right next door.",
+   hours:"Sunrise–sunset (varies by month)",addr:"1-1 Yoyogikamizonocho, Shibuya Ward, Tokyo"},
+  {cat:"sightseeing",tourist:1,lat:35.6595,lng:139.7004,name:"SHIBUYA CROSSING",
+   desc:"The world's busiest pedestrian scramble crossing. Up to 3,000 people cross simultaneously from all directions. Best viewed from the Starbucks on the second floor of the adjacent building.",
+   tip:"Try crossing it once (in all directions at once), then go up to view from above. Busiest at evening rush hour around 6pm.",
+   hours:"24hr",addr:"Shibuya Station, Shibuya Ward, Tokyo"},
+  {cat:"sightseeing",tourist:0,lat:35.6938,lng:139.7036,name:"SHINJUKU GOLDEN GAI",
+   desc:"200 tiny themed bars in 6 narrow alleys behind Kabukicho. Each bar seats 5–15 people maximum. Bars themed around horror films, jazz, electronic music, film noir, cats. Unmissable.",
+   tip:"Most bars have ¥500–1000 cover for newcomers. Bar Nightingale for electronic music. Go on multiple nights — you can't see it all in one.",
+   hours:"Mostly 19:00–late",addr:"Golden Gai, Kabukicho, Shinjuku Ward, Tokyo"},
+  {cat:"sightseeing",tourist:1,lat:35.6702,lng:139.7027,name:"HARAJUKU TAKESHITA STREET",
+   desc:"The epicentre of Japanese youth culture and street fashion. Crepe shops, candy floss, costume shops, fast fashion. Chaotic, colourful and uniquely Tokyo. The backstreets around Cat Street are more interesting.",
+   tip:"Weekday mornings less crowded. Walk Takeshita then immediately escape into Ura-Harajuku for the real stuff.",
+   hours:"varies",addr:"Takeshita Street, Harajuku, Shibuya Ward, Tokyo"},
+  {cat:"sightseeing",tourist:0,lat:35.7265,lng:139.7658,name:"YANAKA OLD TOWN",
+   desc:"Best preserved pre-war Tokyo neighbourhood. Edo-period temple-dense streets, artisan shops, ancient cemetery with old-growth trees. Cats everywhere. Survived WWII almost completely intact.",
+   tip:"Combine with Yanaka Ginza for street food korokke. Very few foreign tourists.",
+   hours:"24hr",addr:"Yanaka, Taito Ward, Tokyo"},
+  // ── KAMAKURA sightseeing
+  {cat:"sightseeing",tourist:1,lat:35.3167,lng:139.5352,name:"GREAT BUDDHA KOTOKU-IN",
+   desc:"The iconic 13.35-metre bronze Buddha sitting in the open air at Kamakura. Cast in 1252. Originally sat inside a wooden hall that was washed away by a tsunami in 1498 — been outside ever since.",
+   tip:"¥300 entry, ¥20 extra to enter the hollow statue. Go early morning. 1 hour from Tokyo by Yokosuka Line.",
+   hours:"8:00–17:30",addr:"4-2-28 Hase, Kamakura, Kanagawa"},
+  {cat:"sightseeing",tourist:1,lat:35.3260,lng:139.5566,name:"TSURUGAOKA HACHIMANGU",
+   desc:"Kamakura's most important shrine, connected to the station by a 1.8km ceremonial approach lined with cherry trees. The main hall overlooks a large lotus pond.",
+   tip:"Late March cherry blossoms on the approach are spectacular. Walk the full approach from the coast.",
+   hours:"5:00–21:00",addr:"2-1-31 Yukinoshita, Kamakura, Kanagawa"},
+  // ── MT FUJI sightseeing
+  {cat:"sightseeing",tourist:1,lat:35.5120,lng:138.7530,name:"LAKE KAWAGUCHI VIEWPOINT",
+   desc:"The most accessible of the Fuji Five Lakes, with classic Fuji reflection shots from the northern shore. Early morning gives mirror-still water and perfect reflections of the summit.",
+   tip:"North shore near Oishi Park is the classic photography spot. Check weather obsessively the night before.",
+   hours:"24hr",addr:"Kawaguchiko, Fujikawaguchiko, Yamanashi"},
+  {cat:"sightseeing",tourist:1,lat:35.4958,lng:138.7874,name:"CHUREITO PAGODA",
+   desc:"Five-storey pagoda with Mt Fuji rising dramatically behind it. With early April cherry blossoms, this is one of Japan's most photographed compositions. 398 steps up from Fujisan Station.",
+   tip:"Go before 7am. Check weather forecast obsessively — clear mornings in April are not guaranteed.",
+   hours:"24hr",addr:"Arakurayama Sengen Park, Fujiyoshida, Yamanashi"},
   // ── ONSEN
   {cat:"onsen",tourist:0,lat:35.6951,lng:139.7038,name:"THERMAE-YU (SHINJUKU)",
    desc:"24-hour sauna and hot spring in the heart of Shinjuku. Multiple baths including a genuine natural hot spring. TV lounge, manga library, restaurant — the classic post-rave or post-Golden-Gai recovery spot.",
@@ -887,6 +1080,39 @@ tokyo:[
   {cat:"arcade",tourist:0,lat:35.6968,lng:139.7730,name:"GAME SPOT 21 (AKIHABARA)",
    desc:"Companion to Taito HEY — 2 minutes walk. Known for shmup and retro cabinet selection: Taito, Konami, Cave. The two together give you a complete shmup pilgrimage.",
    tip:"Smaller but curated. Visit both in the same Akihabara session.",hours:"11:00–23:00",addr:"Akihabara, Chiyoda Ward"},
+  // ── GAME CENTRES
+  {cat:"gamecentre",tourist:1,lat:35.7127,lng:139.7038,name:"GAME CENTER MIKADO (TAKADANOBABA)",
+   desc:"⚠ THE most legendary game centre in Japan. A nondescript building in residential Takadanobaba housing original PCB cabinets from the 80s and a serious competitive community: Street Fighter III 3rd Strike, Guilty Gear, KOF, Touhou. Candy cab rows. The last great pure arcade. A pilgrimage site. Open 10:00–23:30.",
+   tip:"15 mins from Shinjuku on Tozai line. Nothing about it is flashy and that is the point. THIS IS A MUST VISIT. Go on a weekday evening for the competitive scene.",
+   hours:"13:00–23:30 wkdays, 10:00–23:30 wkends",addr:"Takadanobaba 2-chome, Shinjuku Ward, Tokyo"},
+  {cat:"gamecentre",tourist:0,lat:35.7298,lng:139.7109,name:"GAME CENTER MIKADO IKEBUKURO",
+   desc:"Second Mikado location in Ikebukuro. Similar legendary status to the Takadanobaba flagship — retro PCBs, serious competitive community, candy cab rows. Combine with the Ikebukuro TCG circuit.",
+   tip:"Combine with PAT Market and Nakano Broadway for a full gaming day in the north.",
+   hours:"varies",addr:"Ikebukuro, Toshima Ward, Tokyo"},
+  {cat:"gamecentre",tourist:1,lat:35.7019,lng:139.7733,name:"TAITO HEY AKIHABARA",
+   desc:"⚠ 3-floor retro paradise in Akihabara. Floor 1: rhythm games (beatmania IIDX, Sound Voltex). Floor 2: shmups on ORIGINAL PCBs — Cave, Treasure, Toaplan titles. Floor 3: fighting games with genuine local competition. A pilgrimage site for Japanese arcade culture. 10:00–23:00.",
+   tip:"The shmup floor is extraordinary and endangered — spend time there. Original Cave PCBs running. This is irreplaceable.",
+   hours:"10:00–23:00",addr:"1-16-3 Sotokanda, Chiyoda Ward, Tokyo"},
+  {cat:"gamecentre",tourist:0,lat:35.7014,lng:139.7731,name:"GIGO AKIHABARA",
+   desc:"Massive multi-floor GiGO arcade in Akihabara. Largest crane game selection in the area for Pokémon and anime prize items. Rhythm games on upper floors, well-maintained machines.",
+   tip:"Two buildings side by side. Ground floor for crane hunting, upper floors for video games.",
+   hours:"10:00–23:00",addr:"1-11-1 Sotokanda, Chiyoda Ward, Tokyo"},
+  {cat:"gamecentre",tourist:0,lat:35.6944,lng:139.7025,name:"SHINJUKU SPORTSLAND",
+   desc:"Fighting game heavy arcade in Shinjuku, steps from Golden Gai. Street Fighter community is very active, competitive scene strong. Multiple floors of fighting games, rhythm games and crane games.",
+   tip:"Street Fighter community here is serious. Weekday evenings are the best time to watch high-level play.",
+   hours:"10:00–24:00",addr:"Kabukicho, Shinjuku Ward, Tokyo"},
+  {cat:"gamecentre",tourist:0,lat:35.7005,lng:139.7735,name:"GAME NEWTON AKIHABARA",
+   desc:"Retro-focused game centre in Akihabara. Great candy cab selection with older titles maintained in playable condition. The kind of place serious collectors and players gravitate to.",
+   tip:"Combine with Taito HEY and Game Spot 21 for a complete Akihabara retro arcade circuit.",
+   hours:"varies",addr:"Akihabara, Chiyoda Ward, Tokyo"},
+  {cat:"gamecentre",tourist:0,lat:35.6590,lng:139.6985,name:"ROUND1 SHIBUYA",
+   desc:"24hr on weekends. The Shibuya Round1 with full rhythm game canon: IIDX, Sound Voltex, Chunithm, Maimai, Taiko. Comprehensive multi-floor complex convenient before or after an evening in Shibuya.",
+   tip:"Open 24hr on weekends — perfect post-club or 3am destination. Below 109-2 in Udagawacho.",
+   hours:"10:00–02:00 weekdays, 24hr weekends",addr:"Udagawacho, Shibuya Ward, Tokyo"},
+  {cat:"gamecentre",tourist:0,lat:35.7015,lng:139.7730,name:"AKIHABARA GAME CENTER MOGRA",
+   desc:"Known for chiptune and game music events alongside regular gaming. The crossover between music culture and gaming is unique here — regular events feature live game music performances, chip music DJs.",
+   tip:"Check website for upcoming chiptune/game music events. The music nights are unlike any other arcade in Japan.",
+   hours:"varies by event",addr:"2F 1-7 Sotokanda, Chiyoda Ward, Tokyo"},
 ],
 };
 
@@ -905,19 +1131,11 @@ export default function JapanGuide() {
   const [weather,    setWeather]    = useState({});   // { "2026-03-26": { city:"osaka", hi:18, lo:12, rain:0.2, code:1 }, ... }
   const [wxLoading,  setWxLoading]  = useState(false);
   const [wxErr,      setWxErr]      = useState(false);
-  const [isMobile,   setIsMobile]   = useState(()=>typeof window!=="undefined"&&window.innerWidth<768);
 
   const mapRef     = useRef(null);
   const mapInst    = useRef(null);
   const markersRef = useRef({});
   const cardRefs   = useRef({});
-
-  // Mobile resize
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
 
   // Load My Finds from persistent storage
   useEffect(() => {
@@ -1024,15 +1242,6 @@ export default function JapanGuide() {
       markersRef.current = {};
     }
   }, [view]);
-
-  // Destroy+reinit map when mobile layout changes (mapRef points to different DOM node)
-  useEffect(() => {
-    if (mapInst.current) {
-      try { mapInst.current.remove(); } catch(e) {}
-      mapInst.current = null;
-      markersRef.current = {};
-    }
-  }, [isMobile]);
 
   // Init map (runs when view returns to guide)
   useEffect(() => {
@@ -1180,33 +1389,25 @@ export default function JapanGuide() {
         .dark-tiles{filter:invert(1) hue-rotate(200deg) brightness(0.75) saturate(0.6) contrast(0.9);}
         input,textarea,select{outline:none;} input:focus,textarea:focus,select:focus{border-color:#FF6EB4!important;}
         .stripe{background:repeating-linear-gradient(90deg,#FF6EB4 0 9.09%,#FF8C70 9.09% 18.18%,#FFE566 18.18% 27.27%,#2DFFC8 27.27% 36.36%,#C0A8FF 36.36% 45.45%,#7BFF8C 45.45% 54.54%,#FFB347 54.54% 63.63%,#FF9F43 63.63% 72.72%,#E879F9 72.72% 81.81%,#60BFFF 81.81% 100%);height:4px;}
-        .scroll-x{display:flex;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;}
-        .scroll-x::-webkit-scrollbar{display:none;}
-        @media(max-width:767px){
-          .nav-tabs{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap!important;}
-          .nav-tabs::-webkit-scrollbar{display:none;}
-          .header-row{flex-wrap:nowrap!important;align-items:center;}
-          .header-title{flex-shrink:0;}
-        }
       `}</style>
 
       {/* ── HEADER */}
       <div style={{background:"linear-gradient(135deg,#110D22,#1F1440 50%,#2A1858)",position:"sticky",top:0,zIndex:100,boxShadow:"0 4px 30px #00000088"}}>
         <div style={{maxWidth:1320,margin:"0 auto",padding:"0 16px"}}>
-          <div className="header-row" style={{display:"flex",alignItems:"center",gap:isMobile?8:16,padding:"10px 0 0",flexWrap:isMobile?"nowrap":"wrap"}}>
-            <div className="header-title" style={{flexShrink:0}}>
-              <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"clamp(18px,5vw,28px)":"clamp(22px,4vw,42px)",letterSpacing:"0.06em",lineHeight:1,background:"linear-gradient(90deg,#FF6EB4,#FF8C70,#FFE566)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",display:"block"}}>
+          <div style={{display:"flex",alignItems:"center",gap:16,padding:"12px 0 0",flexWrap:"wrap"}}>
+            <div>
+              <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:"clamp(22px,4vw,42px)",letterSpacing:"0.06em",lineHeight:1,background:"linear-gradient(90deg,#FF6EB4,#FF8C70,#FFE566)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",display:"block"}}>
                 JAPAN 2026
               </div>
-              {!isMobile && <div style={{fontSize:10,color:C.muted,letterSpacing:"0.2em",fontWeight:600,marginTop:2}}>UNDERGROUND TRAVEL GUIDE ▸ 24 MAR – 15 APR</div>}
+              <div style={{fontSize:10,color:C.muted,letterSpacing:"0.2em",fontWeight:600,marginTop:2}}>UNDERGROUND TRAVEL GUIDE ▸ 24 MAR – 15 APR</div>
             </div>
             <div style={{flex:1}}/>
-            <div className="nav-tabs" style={{display:"flex",gap:isMobile?0:2,flexShrink:0}}>
+            <div style={{display:"flex",gap:2}}>
               {VIEWS.map(v => {
                 const active = view===v.id;
                 return (
                   <button key={v.id} onClick={()=>setView(v.id)}
-                    style={{background:active?"rgba(255,110,180,0.18)":"transparent",border:"none",borderBottom:active?"2px solid #FF6EB4":"2px solid transparent",color:active?"#FF6EB4":C.dim,fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"11px":"clamp(11px,1.4vw,14px)",letterSpacing:"0.08em",padding:isMobile?"7px 8px 6px":"8px 12px 7px",cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
+                    style={{background:active?"rgba(255,110,180,0.18)":"transparent",border:"none",borderBottom:active?"2px solid #FF6EB4":"2px solid transparent",color:active?"#FF6EB4":C.dim,fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:"clamp(11px,1.4vw,14px)",letterSpacing:"0.12em",padding:"8px 12px 7px",cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
                     {v.icon} {v.label}
                   </button>
                 );
@@ -1233,7 +1434,7 @@ export default function JapanGuide() {
         </div>
       </div>
 
-      <div style={{maxWidth:1320,margin:"0 auto",padding:isMobile?"0 10px":"0 16px"}}>
+      <div style={{maxWidth:1320,margin:"0 auto",padding:"0 16px"}}>
 
         {/* ══ EXPLORE VIEW ══ */}
         {view==="guide" && (
@@ -1268,17 +1469,17 @@ export default function JapanGuide() {
               </div>
             )}
 
-            <div style={{padding:"8px 0",display:"flex",flexWrap:isMobile?"nowrap":"wrap",alignItems:"center",gap:isMobile?"8px":"6px 12px",borderBottom:`1px solid ${C.border}`,marginBottom:14,overflowX:isMobile?"auto":"visible",scrollbarWidth:"none"}}>
-              {!isMobile && <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(13px,2vw,20px)",color:C.text,letterSpacing:"0.04em",flexShrink:0}}>
+            <div style={{padding:"8px 0",display:"flex",flexWrap:"wrap",alignItems:"center",gap:"6px 12px",borderBottom:`1px solid ${C.border}`,marginBottom:14}}>
+              <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(13px,2vw,20px)",color:C.text,letterSpacing:"0.04em"}}>
                 {cityInfo?.emoji} {cityInfo?.label} — {cityInfo?.sub}
                 <span style={{fontSize:11,color:C.dim,fontFamily:"Arial,sans-serif",marginLeft:8}}>{spots.length} SPOTS</span>
-              </div>}
-              <div className="scroll-x" style={{gap:4,marginLeft:isMobile?"0":"auto",flexShrink:isMobile?0:undefined}}>
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginLeft:"auto"}}>
                 {CATS.map(c=>{
                   const active=cat===c.id;
                   return (
                     <button key={c.id} onClick={()=>{setCat(c.id);setExpanded(null);}}
-                      style={{background:active?c.color+"22":"transparent",border:`1px solid ${active?c.color:C.border}`,color:active?c.color:C.muted,fontFamily:"Arial,sans-serif",fontWeight:active?700:400,fontSize:10,letterSpacing:"0.06em",padding:"3px 9px",cursor:"pointer",borderRadius:20,transition:"all 0.15s",whiteSpace:"nowrap",flexShrink:0}}>
+                      style={{background:active?c.color+"22":"transparent",border:`1px solid ${active?c.color:C.border}`,color:active?c.color:C.muted,fontFamily:"Arial,sans-serif",fontWeight:active?700:400,fontSize:10,letterSpacing:"0.06em",padding:"3px 9px",cursor:"pointer",borderRadius:20,transition:"all 0.15s"}}>
                       {c.label}
                     </button>
                   );
@@ -1286,37 +1487,30 @@ export default function JapanGuide() {
               </div>
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1fr) minmax(0,1fr)",gap:16,alignItems:"start"}}>
-              {isMobile && (
-                <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"250px",marginBottom:4}}>
-                  <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
-                </div>
-              )}
-              <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:isMobile?"none":"calc(100vh - 300px)",overflowY:isMobile?"visible":"auto",paddingRight:isMobile?0:4,paddingBottom:40}}>
+            <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:16,alignItems:"start"}}>
+              <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"calc(100vh - 300px)",overflowY:"auto",paddingRight:4,paddingBottom:40}}>
                 {spots.map((spot,i)=>{
                   const id=`${city}-${i}`;
                   return <SpotCard key={id} spot={spot} cityId={city} idx={i} isOpen={expanded===id} isActive={activePin===i} onToggle={()=>toggle(id,i)}/>;
                 })}
               </div>
-              {!isMobile && (
-                <div style={{position:"sticky",top:182,height:"calc(100vh - 300px)"}}>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:6}}>
-                    {CATS.filter(c=>c.id!=="all").map(c=>(
-                      <div key={c.id} style={{display:"flex",alignItems:"center",gap:3,background:c.color+"12",border:`1px solid ${c.color}33`,borderRadius:10,padding:"1px 6px"}}>
-                        <div style={{width:6,height:6,borderRadius:"50%",background:c.color}}/>
-                        <span style={{fontSize:9,color:c.color,fontWeight:600}}>{c.label}</span>
-                      </div>
-                    ))}
-                    <div style={{display:"flex",alignItems:"center",gap:3,background:"#FFE56612",border:"1px solid #FFE56633",borderRadius:10,padding:"1px 6px"}}>
-                      <div style={{width:6,height:6,background:"#FFE566",transform:"rotate(45deg)"}}/>
-                      <span style={{fontSize:9,color:"#FFE566",fontWeight:600}}>⭐ MY FINDS</span>
+              <div style={{position:"sticky",top:182,height:"calc(100vh - 300px)"}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:6}}>
+                  {CATS.filter(c=>c.id!=="all").map(c=>(
+                    <div key={c.id} style={{display:"flex",alignItems:"center",gap:3,background:c.color+"12",border:`1px solid ${c.color}33`,borderRadius:10,padding:"1px 6px"}}>
+                      <div style={{width:6,height:6,borderRadius:"50%",background:c.color}}/>
+                      <span style={{fontSize:9,color:c.color,fontWeight:600}}>{c.label}</span>
                     </div>
-                  </div>
-                  <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"420px"}}>
-                    <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
+                  ))}
+                  <div style={{display:"flex",alignItems:"center",gap:3,background:"#FFE56612",border:"1px solid #FFE56633",borderRadius:10,padding:"1px 6px"}}>
+                    <div style={{width:6,height:6,background:"#FFE566",transform:"rotate(45deg)"}}/>
+                    <span style={{fontSize:9,color:"#FFE566",fontWeight:600}}>⭐ MY FINDS</span>
                   </div>
                 </div>
-              )}
+                <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"420px"}}>
+                  <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
+                </div>
+              </div>
             </div>
 
             <div style={{borderTop:`1px solid ${C.border}`,padding:"18px 0 40px",marginTop:12,display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:10}}>
