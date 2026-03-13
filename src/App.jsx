@@ -1281,7 +1281,7 @@ export default function JapanGuide() {
                     <span style={{fontSize:9,color:"#FFE566",fontWeight:600}}>⭐ MY FINDS</span>
                   </div>
                 </div>
-                <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"calc(100% - 28px)"}}>
+                <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"420px"}}>
                   <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
                 </div>
               </div>
