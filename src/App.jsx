@@ -6,6 +6,8 @@ window.storage = {
 };
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const C = {
   bg:"#1B1730",surf:"#231D3A",border:"#3D3560",
@@ -16,10 +18,24 @@ const C = {
 };
 const PL = {1:"¥",2:"¥¥",3:"¥¥¥"};
 
+function MapContainer({mapRef, isOnline, height}) {
+  if (!isOnline) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height,background:"#231D3A",border:`1px solid ${C.border}`,borderRadius:12,padding:20,textAlign:"center",gap:8}}>
+      <div style={{fontSize:32}}>🗺️</div>
+      <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:14,color:C.muted,letterSpacing:"0.1em"}}>MAP UNAVAILABLE OFFLINE</div>
+      <div style={{fontSize:11,color:C.dim,lineHeight:"18px"}}>For the interactive map, open the live site:</div>
+      <a href="https://glistening-rolypoly-39eb64.netlify.app" target="_blank" rel="noopener noreferrer" style={{color:C.pink,fontSize:11,wordBreak:"break-all"}}>glistening-rolypoly-39eb64.netlify.app</a>
+      <div style={{fontSize:10,color:C.dim,marginTop:2}}>All spots, itinerary and search still work offline.</div>
+    </div>
+  );
+  return <div ref={mapRef} style={{width:"100%",height:"100%"}}/>;
+}
+
 const VIEWS = [
   {id:"guide",   label:"EXPLORE",   icon:"🗾"},
   {id:"itin",    label:"ITINERARY", icon:"📅"},
   {id:"search",  label:"SEARCH",    icon:"🔍"},
+  {id:"rates",   label:"RATES",     icon:"💴"},
   {id:"myfinds", label:"MY FINDS",  icon:"⭐"},
 ];
 
@@ -49,6 +65,7 @@ const CATS = [
   {id:"arcade",      label:"🕹️ ARCADES",         color:"#B8FF47"},
   {id:"sightseeing", label:"🏯 SIGHTSEEING",     color:"#FFD700"},
   {id:"gamecentre",  label:"🕹️ GAME CENTRES",    color:"#00E5FF"},
+  {id:"knives",      label:"🔪 KNIVES",           color:"#D4C0FF"},
 ];
 const CAT_MAP = Object.fromEntries(CATS.map(c=>[c.id,c]));
 
@@ -318,6 +335,15 @@ osaka:[
    desc:"Round1's north Osaka/Umeda location. Full entertainment package — rhythm games, sports simulators, bowling, purikura. Convenient for the Nakazakicho/Compufunk evening run.",
    tip:"Open until 2am. Pair with Compufunk Records nearby for a north Osaka music and games evening.",
    hours:"10:00–02:00",addr:"Umeda, Kita Ward, Osaka"},
+  // ── KNIVES
+  {cat:"knives",tourist:0,lat:34.6687,lng:135.5013,name:"SAKAI ICHIMONJI MITSUHIDE OSAKA",
+   desc:"Renowned Sakai blade maker with Osaka showroom. Sakai in Osaka prefecture is Japan's knife capital — 90% of professional Japanese knives come from here. Full range of gyuto, yanagiba, deba.",
+   tip:"Ask to see the hagane (carbon steel) options — sharper but needs more care than stainless. Budget ¥15,000–80,000 for a serious knife.",
+   hours:"10:00–18:00",addr:"Dotonbori area, Chuo Ward, Osaka"},
+  {cat:"knives",tourist:0,lat:34.6623,lng:135.5066,name:"DOGUYASUJI KITCHEN STREET",
+   desc:"Osaka's own version of Kappabashi — an entire street of professional kitchen suppliers in Namba. Multiple knife specialists alongside cookware, crockery and restaurant supplies.",
+   tip:"Less touristy than Tokyo's Kappabashi. Prices are competitive and shopkeepers are used to explaining blades to non-Japanese speakers.",
+   hours:"10:00–18:00 (most shops)",addr:"Doguyasuji, Namba, Chuo Ward, Osaka"},
 ],
 
 hiroshima:[
@@ -694,6 +720,15 @@ kyoto:[
    desc:"Round1's Kyoto location on the Shijo-Kawaramachi entertainment strip. Multiple floors of rhythm games, prize games, sports simulators. The rhythm game section has current cabinets.",
    tip:"Ground floor has card game machines if you want to mix TCG hunting with arcade time.",
    hours:"10:00–02:00",addr:"Shijo-Kawaramachi, Shimogyo Ward, Kyoto"},
+  // ── KNIVES
+  {cat:"knives",tourist:1,lat:35.0052,lng:135.7658,name:"ARITSUGU KYOTO",
+   desc:"Founded in 1560, Aritsugu is one of Japan's most legendary knife makers. Originally made swords for the Imperial household. Their Nishiki Market shop sells handmade knives, and they will engrave your name in kanji on the blade.",
+   tip:"Allow time — the engraving service takes about 30 minutes while you wait. A gyuto here is a genuine heirloom piece. ¥20,000–150,000+.",
+   hours:"09:00–18:00",addr:"Nishiki Market, Nakagyo Ward, Kyoto"},
+  {cat:"knives",tourist:0,lat:35.0048,lng:135.7660,name:"FUNAHIRO KYOTO",
+   desc:"Another Nishiki Market institution, Funahiro specialises in traditional Japanese single-bevel knives — yanagiba for sashimi, usuba for vegetables. Handmade by Kyoto craftsmen.",
+   tip:"Great for a more affordable but still authentic option compared to Aritsugu. Staff speak some English.",
+   hours:"10:00–18:00",addr:"Nishiki Market, Nakagyo Ward, Kyoto"},
 ],
 nagoya:[
   {cat:"hidden",tourist:1,lat:35.1830,lng:137.0880,name:"GHIBLI PARK",
@@ -1113,283 +1148,431 @@ tokyo:[
    desc:"Known for chiptune and game music events alongside regular gaming. The crossover between music culture and gaming is unique here — regular events feature live game music performances, chip music DJs.",
    tip:"Check website for upcoming chiptune/game music events. The music nights are unlike any other arcade in Japan.",
    hours:"varies by event",addr:"2F 1-7 Sotokanda, Chiyoda Ward, Tokyo"},
+  // ── KNIVES
+  {cat:"knives",tourist:1,lat:35.7185,lng:139.7948,name:"KAPPABASHI KITCHEN TOWN",
+   desc:"An entire street (200m+) of professional kitchen suppliers — the best place in Japan to buy knives. Dozens of specialist knife shops with ranges from ¥3,000 entry-level to ¥500,000 hand-forged masterpieces. Tsubaya, Kama-asa and Togiharu are the standout shops.",
+   tip:"This is the #1 destination for knives in Japan. Go here over anywhere else if you're serious. Tsubaya is best for single-bevel traditional knives; Kama-asa for western-style Japanese knives.",
+   hours:"10:00–17:30 (most shops, closed Sun)",addr:"Kappabashi-dori, Taito Ward, Tokyo"},
+  {cat:"knives",tourist:0,lat:35.7189,lng:139.7952,name:"TSUBAYA KAPPABASHI",
+   desc:"The most respected knife specialist on Kappabashi Street. Four floors of professional Japanese knives, from entry-level to hand-forged carbon steel. Staff are knife obsessives who will help you choose based on what you cook.",
+   tip:"Tell them it's a gift and what your mum cooks — they'll recommend the perfect knife. A santoku (all-purpose) or gyuto (chef's knife) is ideal for home cooks. Budget ¥8,000–30,000 for a great gift knife.",
+   hours:"10:00–17:30 (closed Sun)",addr:"Kappabashi-dori, Taito Ward, Tokyo"},
+  {cat:"knives",tourist:0,lat:35.7191,lng:139.7949,name:"KAMA-ASA SHOTEN",
+   desc:"Founded 1908. One of Tokyo's most beloved kitchen shops — not just knives but the full toolkit of Japanese cooking. Their knife selection is curated and excellent, with a focus on knives that are beautiful AND functional.",
+   tip:"More of a lifestyle kitchen shop than pure knife specialist, which makes it less intimidating. Great for picking up other Japanese kitchen gifts alongside the knife.",
+   hours:"10:00–17:30 (closed Tue)",addr:"Kappabashi-dori, Taito Ward, Tokyo"},
 ],
 };
 
+
 // ── MAIN COMPONENT ─────────────────────────────────────────
 export default function JapanGuide() {
-  const [view,       setView]       = useState("guide");
-  const [city,       setCity]       = useState("osaka");
-  const [cat,        setCat]        = useState("all");
-  const [expanded,   setExpanded]   = useState(null);
-  const [activePin,  setActivePin]  = useState(null);
-  const [leafletOK,  setLeafletOK]  = useState(false);
-  const [searchQ,    setSearchQ]    = useState("");
-  const [myFinds,    setMyFinds]    = useState([]);
-  const [showForm,   setShowForm]   = useState(false);
-  const [form,       setForm]       = useState({name:"",cat:"food",city:"osaka",addr:"",lat:"",lng:"",desc:"",hours:"",price:1,tip:""});
-  const [weather,    setWeather]    = useState({});   // { "2026-03-26": { city:"osaka", hi:18, lo:12, rain:0.2, code:1 }, ... }
-  const [wxLoading,  setWxLoading]  = useState(false);
-  const [wxErr,      setWxErr]      = useState(false);
-  const [isMobile,   setIsMobile]   = useState(()=>typeof window!=="undefined"&&window.innerWidth<768);
+  const [view,        setView]        = useState("guide");
+  const [city,        setCity]        = useState("osaka");
+  const [cat,         setCat]         = useState("all");
+  const [expanded,    setExpanded]    = useState(null);
+  const [activePin,   setActivePin]   = useState(null);
+  const [searchQ,     setSearchQ]     = useState("");
+  const [myFinds,     setMyFinds]     = useState([]);
+  const [showForm,    setShowForm]    = useState(false);
+  const [form,        setForm]        = useState({name:"",cat:"food",city:"osaka",addr:"",lat:"",lng:"",desc:"",hours:"",price:1,tip:""});
+  const [weather,     setWeather]     = useState({});
+  const [wxLoading,   setWxLoading]   = useState(false);
+  const [wxErr,       setWxErr]       = useState(false);
+  const [isMobile,    setIsMobile]    = useState(()=>typeof window!=="undefined"&&window.innerWidth<768);
+  const [isOnline,    setIsOnline]    = useState(()=>typeof navigator!=="undefined" ? navigator.onLine : true);
+  const [rates,       setRates]       = useState(null);
+  const [rateInput,   setRateInput]   = useState("");
+  const [jpyInput,    setJpyInput]    = useState("");
+  const [toastMsg,    setToastMsg]    = useState("");
+  const [highlightSpot, setHighlightSpot] = useState(null);
 
   const mapRef     = useRef(null);
   const mapInst    = useRef(null);
   const markersRef = useRef({});
   const cardRefs   = useRef({});
 
-  // Mobile resize
+  // ── ONLINE / OFFLINE
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+    const on  = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener("online",  on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
   }, []);
 
-  // Load My Finds from persistent storage
+  // ── TOAST HELPER
+  const showToast = (msg) => { setToastMsg(msg); setTimeout(()=>setToastMsg(""), 2500); };
+
+  // ── URL HASH — auto-scroll to #spot=Name on load
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith("#spot=")) return;
+    const spotName = decodeURIComponent(hash.slice(6));
+    setHighlightSpot(spotName);
+    for (const [cid, spotList] of Object.entries(DATA)) {
+      const idx = spotList.findIndex(s => s.name.replace(/^⚠ /,"") === spotName);
+      if (idx >= 0) {
+        setView("guide"); setCity(cid); setCat("all");
+        setTimeout(() => {
+          setExpanded(`${cid}-${idx}`); setActivePin(idx);
+          setTimeout(() => cardRefs.current[idx]?.scrollIntoView({behavior:"smooth",block:"center"}), 400);
+        }, 300);
+        break;
+      }
+    }
+  }, []);
+
+  // ── MOBILE RESIZE
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+
+  // ── LOAD MY FINDS
   useEffect(() => {
     (async () => {
-      try {
-        const r = await window.storage.get("myjapanfinds");
-        if (r?.value) setMyFinds(JSON.parse(r.value));
-      } catch(e) {}
+      try { const r = await window.storage.get("myjapanfinds"); if (r?.value) setMyFinds(JSON.parse(r.value)); } catch(e) {}
     })();
   }, []);
 
-  // ── LIVE WEATHER from Open-Meteo (free, no API key) ──────
+  // ── LIVE WEATHER
   useEffect(() => {
     const WX_CACHE_KEY = "japanWeatherCache";
-    const CACHE_TTL = 3600000; // 1 hour in ms
+    const CACHE_TTL = 3600000;
     const CITIES_WX = [
-      {id:"osaka",     lat:34.672, lng:135.501},
-      {id:"hiroshima", lat:34.393, lng:132.452},
-      {id:"west",      lat:34.690, lng:134.000},
-      {id:"kyoto",     lat:35.011, lng:135.768},
-      {id:"nagoya",    lat:35.170, lng:136.900},
-      {id:"fuji",      lat:35.490, lng:138.740},
-      {id:"tokyo",     lat:35.682, lng:139.710},
+      {id:"osaka",lat:34.672,lng:135.501},{id:"hiroshima",lat:34.393,lng:132.452},
+      {id:"west",lat:34.690,lng:134.000},{id:"kyoto",lat:35.011,lng:135.768},
+      {id:"nagoya",lat:35.170,lng:136.900},{id:"fuji",lat:35.490,lng:138.740},
+      {id:"tokyo",lat:35.682,lng:139.710},
     ];
-    const WX_CODES = {
-      0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",
-      51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",
-      71:"🌨️",73:"🌨️",75:"🌨️",80:"🌦️",81:"🌦️",82:"🌧️",
-      95:"⛈️",96:"⛈️",99:"⛈️"
-    };
-    const wxIcon = code => {
-      if (code == null) return "—";
-      const keys = Object.keys(WX_CODES).map(Number).sort((a,b)=>b-a);
-      for (const k of keys) { if (code >= k) return WX_CODES[k]; }
-      return "🌡️";
-    };
-    const fetchAllWeather = async () => {
+    const WX_CODES = {0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",71:"🌨️",73:"🌨️",75:"🌨️",80:"🌦️",81:"🌦️",82:"🌧️",95:"⛈️",96:"⛈️",99:"⛈️"};
+    const wxIcon = code => { if (code==null) return "—"; const keys=Object.keys(WX_CODES).map(Number).sort((a,b)=>b-a); for(const k of keys){if(code>=k)return WX_CODES[k];} return "🌡️"; };
+    const fetchAll = async () => {
       setWxLoading(true); setWxErr(false);
       try {
-        // Check cache first
         const cached = await window.storage.get(WX_CACHE_KEY).catch(()=>null);
-        if (cached?.value) {
-          const {ts, data} = JSON.parse(cached.value);
-          if (Date.now() - ts < CACHE_TTL) { setWeather(data); setWxLoading(false); return; }
-        }
+        if (cached?.value) { const {ts,data}=JSON.parse(cached.value); if(Date.now()-ts<CACHE_TTL){setWeather(data);setWxLoading(false);return;} }
         const combined = {};
         for (const c of CITIES_WX) {
           const url = `https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&timezone=Asia%2FTokyo&start_date=2026-03-26&end_date=2026-04-15`;
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          const j = await res.json();
-          if (!j.daily) continue;
-          j.daily.time.forEach((dateStr, i) => {
-            const code = j.daily.weathercode[i];
-            combined[dateStr] = combined[dateStr] || {};
-            combined[dateStr][c.id] = {
-              hi:   Math.round(j.daily.temperature_2m_max[i]),
-              lo:   Math.round(j.daily.temperature_2m_min[i]),
-              rain: +(j.daily.precipitation_sum[i] || 0).toFixed(1),
-              code,
-              icon: wxIcon(code),
-            };
+          const res = await fetch(url); if (!res.ok) continue;
+          const j = await res.json(); if (!j.daily) continue;
+          j.daily.time.forEach((dateStr,i) => {
+            const code=j.daily.weathercode[i]; combined[dateStr]=combined[dateStr]||{};
+            combined[dateStr][c.id]={hi:Math.round(j.daily.temperature_2m_max[i]),lo:Math.round(j.daily.temperature_2m_min[i]),rain:+(j.daily.precipitation_sum[i]||0).toFixed(1),code,icon:wxIcon(code)};
           });
-          await new Promise(r => setTimeout(r, 120)); // rate limit courtesy
+          await new Promise(r=>setTimeout(r,120));
         }
         setWeather(combined);
-        await window.storage.set(WX_CACHE_KEY, JSON.stringify({ts: Date.now(), data: combined})).catch(()=>{});
+        await window.storage.set(WX_CACHE_KEY,JSON.stringify({ts:Date.now(),data:combined})).catch(()=>{});
       } catch(e) { setWxErr(true); }
       setWxLoading(false);
     };
-    fetchAllWeather();
+    fetchAll();
   }, []);
+
+  // ── EXCHANGE RATE (fetch on first visit to rates tab)
+  useEffect(() => {
+    if (view !== "rates" || rates) return;
+    (async () => {
+      try {
+        const res = await fetch("https://api.frankfurter.app/latest?from=GBP&to=JPY");
+        if (!res.ok) return;
+        const j = await res.json();
+        const jst = new Date(new Date().getTime() + 9*60*60*1000);
+        setRates({ rate: Math.round(j.rates.JPY), updated: jst.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) + " JST" });
+      } catch(e) {}
+    })();
+  }, [view, rates]);
 
   const saveFind = async (f) => {
     const updated = [...myFinds, {...f, id:Date.now(), lat:parseFloat(f.lat)||null, lng:parseFloat(f.lng)||null}];
     setMyFinds(updated);
     try { await window.storage.set("myjapanfinds", JSON.stringify(updated)); } catch(e) {}
   };
-
   const deleteFind = async (id) => {
-    const updated = myFinds.filter(f => f.id !== id);
-    setMyFinds(updated);
+    const updated = myFinds.filter(f=>f.id!==id); setMyFinds(updated);
     try { await window.storage.set("myjapanfinds", JSON.stringify(updated)); } catch(e) {}
   };
 
-  // Load Leaflet
-  useEffect(() => {
-    if (window.L) { setLeafletOK(true); return; }
-    const css = document.createElement("link");
-    css.rel = "stylesheet";
-    css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
-    document.head.appendChild(css);
-    const js = document.createElement("script");
-    js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-    js.onload = () => setLeafletOK(true);
-    document.body.appendChild(js);
-  }, []);
 
-  // ── BUG FIX 1: destroy map when leaving guide view so it can reinit cleanly on return
+  useEffect(() => { if (view!=="guide"&&mapInst.current){try{mapInst.current.remove();}catch(e){} mapInst.current=null; markersRef.current={};} }, [view]);
+  useEffect(() => { if (mapInst.current){try{mapInst.current.remove();}catch(e){} mapInst.current=null; markersRef.current={};} }, [isMobile]);
+
   useEffect(() => {
-    if (view !== "guide" && mapInst.current) {
-      try { mapInst.current.remove(); } catch(e) {}
-      mapInst.current = null;
-      markersRef.current = {};
-    }
+    if (view!=="guide"||!mapRef.current||mapInst.current) return;
+    const map=L.map(mapRef.current,{zoomControl:true,attributionControl:false});
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,className:"dark-tiles"}).addTo(map);
+    L.control.attribution({position:"bottomright",prefix:""}).addAttribution('<span style="color:#7060A0;font-size:9px">© OSM contributors</span>').addTo(map);
+    mapInst.current=map;
   }, [view]);
 
-  // Destroy+reinit map when mobile layout changes (mapRef points to different DOM node)
-  useEffect(() => {
-    if (mapInst.current) {
-      try { mapInst.current.remove(); } catch(e) {}
-      mapInst.current = null;
-      markersRef.current = {};
+  // ── PARSE OPEN STATUS (JST-aware)
+  const parseOpenStatus = (hoursStr) => {
+    if (!hoursStr) return "CHECK";
+    const lower = hoursStr.toLowerCase();
+    if (lower.includes("always")||lower.includes("24hr")||lower==="24 hours") return "OPEN";
+    if (lower.includes("varies")||lower.includes("seasonal")||lower.includes("irregular")) return "CHECK";
+    const now = new Date(), jst = new Date(now.getTime()+9*60*60*1000);
+    const jstHour=jst.getUTCHours(), jstMin=jst.getUTCMinutes(), jstDay=jst.getUTCDay();
+    const jstMins=jstHour*60+jstMin;
+    const toMins=(h,m)=>parseInt(h)*60+parseInt(m);
+    const parseRange=(s)=>{ const m=s.match(/(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})/); if(!m)return null; const o=toMins(m[1],m[2]),c=toMins(m[3],m[4]); return{open:o,close:c,overnight:c<o}; };
+    const inRange=(r)=>{ if(!r)return false; return r.overnight?(jstMins>=r.open||jstMins<r.close):(jstMins>=r.open&&jstMins<r.close); };
+    const isFriSat=jstDay===5||jstDay===6, isWkday=jstDay>=1&&jstDay<=5;
+    if (isFriSat) { const m=hoursStr.match(/(\d{1,2}:\d{2}\s*[–\-]\s*\d{1,2}:\d{2})\s*(?:Fri\/Sat|Fri-Sat)/i); if(m){const r=parseRange(m[0]);if(r)return inRange(r)?"OPEN":"CLOSED";} }
+    if (isWkday)  { const m=hoursStr.match(/(\d{1,2}:\d{2}\s*[–\-]\s*\d{1,2}:\d{2})\s*(?:wkdays?|weekdays?)/i); if(m){const r=parseRange(m[0]);if(r)return inRange(r)?"OPEN":"CLOSED";} }
+    const r=parseRange(hoursStr); if(!r)return "CHECK";
+    return inRange(r)?"OPEN":"CLOSED";
+  };
+
+  // ── GET TRANSPORT INFO
+  const getTransport = (spot) => {
+    const la=spot.lat, lo=spot.lng;
+    if (!la||!lo) return null;
+    // Osaka
+    if (la>=34.60&&la<=34.73&&lo>=135.43&&lo<=135.58) {
+      if (la>=34.69) return {station:"Osaka/Umeda Station",walk:"5–10 min",jrPass:true,note:"JR Osaka line",tip:"Use ICOCA for subway lines."};
+      if (la>=34.645&&la<=34.665&&lo>=135.50&&lo<=135.515) return {station:"Ebisucho Station (Sakaisuji line)",walk:"3 min",jrPass:false,note:"use ICOCA",tip:"Sakaisuji line is fastest for Den Den Town."};
+      return {station:"Namba or Shinsaibashi Station",walk:"5–10 min",jrPass:false,note:"use ICOCA (Osaka Metro)",tip:"Osaka central subway is faster than JR here."};
     }
-  }, [isMobile]);
+    // Miyajima island
+    if (la>=34.26&&la<=34.32) return {station:"JR Sanyo → Miyajimaguchi → 10 min ferry",walk:"ferry + 5 min",jrPass:true,note:"JR covers train, NOT ferry (¥200)",tip:"Ferry to Miyajima is ¥200 each way — not JR Pass."};
+    // Hiroshima
+    if (la>=34.35&&la<=34.42&&lo>=132.42&&lo<=132.52) return {station:"Hiroshima Station",walk:"10–20 min or tram",jrPass:true,note:"JR Hiroshima",tip:"City trams cover most sights — ¥220 flat fare."};
+    // Himeji
+    if (la>=34.82&&la<=34.86&&lo>=134.65&&lo<=134.73) return {station:"Himeji Station (JR Sanyo)",walk:"15 min walk",jrPass:true,note:"JR Sanyo Line",tip:"Walk straight up the boulevard — castle visible the whole way."};
+    // Onomichi
+    if (la>=34.40&&la<=34.42&&lo>=133.17&&lo<=133.22) return {station:"Onomichi Station (JR Sanyo)",walk:"5 min",jrPass:true,note:"JR Sanyo Line",tip:"EtSetora scenic train stops here from Hiroshima."};
+    // Kurashiki
+    if (la>=34.57&&la<=34.62&&lo>=133.70&&lo<=133.80) return {station:"Kurashiki Station (JR Sanyo)",walk:"10 min",jrPass:true,note:"JR Sanyo Line",tip:"5 min walk to Bikan from south exit."};
+    // Kobe
+    if (la>=34.66&&la<=34.72&&lo>=135.15&&lo<=135.22) return {station:"Motomachi Station (JR Kobe Line)",walk:"5–10 min",jrPass:true,note:"JR Kobe Line",tip:"JR Pass covers Kobe Line. Subway requires ICOCA."};
+    // Arima Onsen
+    if (la>=34.79&&la<=34.81) return {station:"Express bus from Sannomiya (30 min)",walk:"5 min from bus stop",jrPass:false,note:"bus not covered",tip:"¥580 express bus from Sannomiya — no direct train."};
+    // Fushimi Inari
+    if (la>=34.96&&la<=34.98&&lo>=135.76&&lo<=135.78) return {station:"Inari Station (JR Nara Line)",walk:"2 min",jrPass:true,note:"JR Nara Line",tip:"Station is literally at the shrine entrance. First train ~5:30am."};
+    // Arashiyama
+    if (la>=35.01&&la<=35.03&&lo>=135.66&&lo<=135.68) return {station:"Saga-Arashiyama Station (JR Sagano)",walk:"5 min",jrPass:true,note:"JR Sagano Line",tip:"15 min from Kyoto Station."};
+    // Uji
+    if (la>=34.87&&la<=34.92&&lo>=135.79&&lo<=135.82) return {station:"Uji Station (JR Nara Line)",walk:"10 min",jrPass:true,note:"JR Nara Line",tip:"20 min from Kyoto Station."};
+    // Nara
+    if (la>=34.66&&la<=34.72&&lo>=135.82&&lo<=135.88) return {station:"Kintetsu Nara or JR Nara Station",walk:"10–15 min",jrPass:true,note:"JR Nara Line",tip:"Kintetsu is slightly closer to deer park."};
+    // Kyoto central
+    if (la>=34.98&&la<=35.02&&lo>=135.74&&lo<=135.78) return {station:"Kawaramachi Station (Hankyu)",walk:"5–10 min",jrPass:false,note:"use ICOCA (Hankyu)",tip:"Central Kyoto subway/Hankyu not covered by JR Pass."};
+    // Kyoto broader
+    if (la>=34.88&&la<=35.07&&lo>=135.68&&lo<=135.82) return {station:"Kyoto Station or nearest subway",walk:"varies",jrPass:true,note:"JR to Kyoto Station",tip:"JR Pass covers shinkansen to Kyoto. Local travel needs ICOCA."};
+    // Kamakura
+    if (la>=35.30&&la<=35.35) return {station:"Kamakura Station (JR Yokosuka Line)",walk:"15–20 min or bus",jrPass:true,note:"JR Yokosuka Line",tip:"1hr from Tokyo. Bus from station ¥200."};
+    // Fuji/Kawaguchiko
+    if (la>=35.35&&la<=35.55&&lo>=138.60&&lo<=138.90) return {station:"Kawaguchiko Station (Fujikyuko Line)",walk:"5–20 min or rent a bike",jrPass:false,note:"pay separately (~¥2,300)",tip:"Shinkansen to Otsuki then Fujikyuko Line ~50 min."};
+    // Hakone
+    if (la>=35.22&&la<=35.27) return {station:"Hakone-Yumoto (Odakyu Romancecar)",walk:"varies",jrPass:false,note:"Odakyu not covered",tip:"Romancecar from Shinjuku 1.5hrs. Hakone Free Pass covers local transport."};
+    // Tokyo Akihabara
+    if (la>=35.69&&la<=35.71&&lo>=139.77&&lo<=139.78) return {station:"Akihabara Station (JR Yamanote)",walk:"3–5 min",jrPass:true,note:"JR Yamanote/Keihin-Tohoku",tip:"Electric Town exit faces Den-Den town directly."};
+    // Kappabashi
+    if (la>=35.71&&la<=35.73&&lo>=139.79&&lo<=139.80) return {station:"Tawaramachi Station (Tokyo Metro Ginza)",walk:"5 min",jrPass:false,note:"use ICOCA/Suica",tip:"NOT on Yamanote. Take Ginza line from Asakusa."};
+    // Asakusa
+    if (la>=35.70&&la<=35.73&&lo>=139.78&&lo<=139.81) return {station:"Asakusa Station (Tokyo Metro/Tobu)",walk:"5–10 min",jrPass:false,note:"use ICOCA/Suica",tip:"JR Ueno is nearby but Metro Asakusa is closer to the temple."};
+    // Shinjuku
+    if (la>=35.68&&la<=35.71&&lo>=139.69&&lo<=139.71) return {station:"Shinjuku Station (JR Yamanote)",walk:"5–10 min",jrPass:true,note:"JR Yamanote Line",tip:"Use east exit for Kabukicho/Golden Gai."};
+    // Shibuya
+    if (la>=35.65&&la<=35.67&&lo>=139.69&&lo<=139.71) return {station:"Shibuya Station (JR Yamanote)",walk:"5–10 min",jrPass:true,note:"JR Yamanote Line",tip:"Hachiko exit for Crossing and Center Gai."};
+    // Shimokitazawa
+    if (la>=35.65&&la<=35.67&&lo>=139.66&&lo<=139.68) return {station:"Shimokitazawa Station (Odakyu)",walk:"3–5 min",jrPass:false,note:"NOT JR Pass (use ICOCA)",tip:"2 stops from Shinjuku on Odakyu — ¥160."};
+    // Sangenjaya
+    if (la>=35.63&&la<=35.66&&lo>=139.66&&lo<=139.68) return {station:"Sangenjaya Station (Tokyu Den-en-toshi)",walk:"3–5 min",jrPass:false,note:"NOT JR Pass",tip:"2 stops from Shibuya on Tokyu Den-en-toshi."};
+    // Harajuku/Omotesando
+    if (la>=35.66&&la<=35.68&&lo>=139.70&&lo<=139.72) return {station:"Harajuku Station (JR Yamanote)",walk:"5–10 min",jrPass:true,note:"JR Yamanote Line",tip:"Omotesando exit for Cat Street and Ura-Harajuku."};
+    // Koenji
+    if (la>=35.69&&la<=35.72&&lo>=139.64&&lo<=139.66) return {station:"Koenji Station (JR Chuo Line)",walk:"3–5 min",jrPass:true,note:"JR Chuo Line",tip:"South exit for vintage shops and live venues."};
+    // Takadanobaba
+    if (la>=35.71&&la<=35.72&&lo>=139.70&&lo<=139.71) return {station:"Takadanobaba Station (JR Yamanote)",walk:"8–10 min",jrPass:true,note:"JR Yamanote Line",tip:"25 min from Shinjuku. Mikado is 8 min from station."};
+    // Generic Tokyo
+    if (la>=35.62&&la<=35.75&&lo>=139.63&&lo<=139.80) return {station:"Nearest JR Yamanote or Metro station",walk:"5–15 min",jrPass:true,note:"JR varies",tip:"Suica/ICOCA works on all Tokyo transit. JR Pass covers Yamanote ring line."};
+    return null;
+  };
 
-  // Init map (runs when view returns to guide)
-  useEffect(() => {
-    if (view !== "guide" || !leafletOK || !mapRef.current || mapInst.current) return;
-    const L = window.L;
-    const map = L.map(mapRef.current, {zoomControl:true, attributionControl:false});
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom:19, className:"dark-tiles"}).addTo(map);
-    L.control.attribution({position:"bottomright",prefix:""}).addAttribution('<span style="color:#7060A0;font-size:9px">© OSM contributors</span>').addTo(map);
-    mapInst.current = map;
-  }, [leafletOK, view]);
-
-  // ── BUG FIX 2: include myFinds in the spots useMemo so they appear on the map and list
+  // ── SPOTS with open-status sort
   const spots = useMemo(() => {
     const myFindsForCity = myFinds
-      .filter(f => f.city === city)
-      .map(f => ({
-        ...f, isMyFind:true,
-        lat: typeof f.lat==="number" ? f.lat : parseFloat(f.lat)||null,
-        lng: typeof f.lng==="number" ? f.lng : parseFloat(f.lng)||null,
-      }));
-    const base = [...(DATA[city] || []), ...myFindsForCity];
-    return cat === "all" ? base : base.filter(x => x.cat === cat);
+      .filter(f=>f.city===city)
+      .map(f=>({...f,isMyFind:true,lat:typeof f.lat==="number"?f.lat:parseFloat(f.lat)||null,lng:typeof f.lng==="number"?f.lng:parseFloat(f.lng)||null}));
+    const base = [...(DATA[city]||[]),...myFindsForCity];
+    const filtered = cat==="all" ? base : base.filter(x=>x.cat===cat);
+    const order = {OPEN:0,CHECK:1,CLOSED:2};
+    return [...filtered].sort((a,b)=>(order[parseOpenStatus(a.hours)]??1)-(order[parseOpenStatus(b.hours)]??1));
   }, [city, cat, myFinds]);
 
-  // Markers
+  // ── MAP MARKERS
   useEffect(() => {
-    if (!mapInst.current || !window.L || view !== "guide") return;
-    const L = window.L, map = mapInst.current;
-    Object.values(markersRef.current).forEach(m => { try { map.removeLayer(m); } catch(e){} });
-    markersRef.current = {};
-    const bounds = [];
-    spots.forEach((spot, i) => {
-      if (!spot.lat || !spot.lng) return;
-      const color = spot.isMyFind ? "#FFE566" : (CAT_MAP[spot.cat]?.color || "#fff");
-      const shape = spot.isMyFind
-        ? `<div style="width:16px;height:16px;background:${color};border:2.5px solid #1B1730;box-shadow:0 0 10px ${color}99;cursor:pointer;transform:rotate(45deg);"></div>`
-        : `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid #1B1730;box-shadow:0 0 8px ${color}88;cursor:pointer;"></div>`;
-      const icon = L.divIcon({ html:shape, className:"", iconSize:[16,16], iconAnchor:[8,8] });
-      const priceStr = spot.price ? ` &nbsp;<b style="color:#FFE566">${PL[spot.price]}</b>` : "";
-      const hoursStr = spot.hours ? `<br/><span style="color:#FF9F43;font-size:10px">⏰ ${spot.hours}</span>` : "";
-      const starBadge = spot.isMyFind ? ` <span style="color:#FFE566">⭐</span>` : "";
-      const marker = L.marker([spot.lat,spot.lng],{icon}).addTo(map)
+    if (!mapInst.current||view!=="guide") return;
+    const map=mapInst.current;
+    Object.values(markersRef.current).forEach(m=>{try{map.removeLayer(m);}catch(e){}});
+    markersRef.current={};
+    const bounds=[];
+    spots.forEach((spot,i)=>{
+      if (!spot.lat||!spot.lng) return;
+      const color=spot.isMyFind?"#FFE566":(CAT_MAP[spot.cat]?.color||"#fff");
+      const shape=spot.isMyFind
+        ?`<div style="width:16px;height:16px;background:${color};border:2.5px solid #1B1730;box-shadow:0 0 10px ${color}99;cursor:pointer;transform:rotate(45deg);"></div>`
+        :`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2.5px solid #1B1730;box-shadow:0 0 8px ${color}88;cursor:pointer;"></div>`;
+      const icon=L.divIcon({html:shape,className:"",iconSize:[16,16],iconAnchor:[8,8]});
+      const priceStr=spot.price?` &nbsp;<b style="color:#FFE566">${PL[spot.price]}</b>`:"";
+      const hoursStr=spot.hours?`<br/><span style="color:#FF9F43;font-size:10px">⏰ ${spot.hours}</span>`:"";
+      const starBadge=spot.isMyFind?` <span style="color:#FFE566">⭐</span>`:"";
+      const marker=L.marker([spot.lat,spot.lng],{icon}).addTo(map)
         .bindPopup(`<div style="font-family:Arial,sans-serif;color:#E0D4FF;max-width:200px"><b style="color:#FFF;font-size:13px">${spot.name.replace(/^⚠ /,"")}${starBadge}</b>${priceStr}<br/><span style="color:#9080B8;font-size:10px">📍 ${spot.addr}</span>${hoursStr}</div>`,{closeButton:false,maxWidth:220});
-      marker.on("click", () => {
-        setActivePin(i); setExpanded(`${city}-${i}`);
-        cardRefs.current[i]?.scrollIntoView({behavior:"smooth",block:"nearest"});
-      });
-      markersRef.current[i] = marker;
-      bounds.push([spot.lat,spot.lng]);
+      marker.on("click",()=>{setActivePin(i);setExpanded(`${city}-${i}`);cardRefs.current[i]?.scrollIntoView({behavior:"smooth",block:"nearest"});});
+      markersRef.current[i]=marker; bounds.push([spot.lat,spot.lng]);
     });
-    if (bounds.length > 0) setTimeout(() => { try { map.fitBounds(bounds,{padding:[36,36],maxZoom:15}); } catch(e){} }, 100);
-  }, [spots, leafletOK, city, view]);
+    if (bounds.length>0) setTimeout(()=>{try{map.fitBounds(bounds,{padding:[36,36],maxZoom:15});}catch(e){}},100);
+  }, [spots, city, view]);
 
-  // Active pin
   useEffect(() => {
-    if (!mapInst.current || !window.L || view !== "guide") return;
-    const L = window.L;
-    Object.entries(markersRef.current).forEach(([idx,marker]) => {
-      const i = parseInt(idx), isActive = expanded === `${city}-${i}`, spot = spots[i];
-      if (!spot) return;
-      const color = spot.isMyFind ? "#FFE566" : (CAT_MAP[spot.cat]?.color || "#fff");
-      const size = isActive ? 20 : (spot.isMyFind ? 16 : 14);
-      const shape = spot.isMyFind
-        ? `<div style="width:${size}px;height:${size}px;background:${color};border:${isActive?"3px solid #fff":"2.5px solid #1B1730"};box-shadow:0 0 ${isActive?16:10}px ${color}${isActive?"EE":"99"};cursor:pointer;transform:rotate(45deg);"></div>`
-        : `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:${isActive?"3px solid #fff":"2.5px solid #1B1730"};box-shadow:0 0 ${isActive?14:8}px ${color}${isActive?"EE":"88"};cursor:pointer;"></div>`;
-      marker.setIcon(L.divIcon({ html:shape, className:"", iconSize:[size,size], iconAnchor:[size/2,size/2] }));
+    if (!mapInst.current||view!=="guide") return;
+    Object.entries(markersRef.current).forEach(([idx,marker])=>{
+      const i=parseInt(idx),isActive=expanded===`${city}-${i}`,spot=spots[i]; if(!spot)return;
+      const color=spot.isMyFind?"#FFE566":(CAT_MAP[spot.cat]?.color||"#fff");
+      const size=isActive?20:(spot.isMyFind?16:14);
+      const shape=spot.isMyFind
+        ?`<div style="width:${size}px;height:${size}px;background:${color};border:${isActive?"3px solid #fff":"2.5px solid #1B1730"};box-shadow:0 0 ${isActive?16:10}px ${color}${isActive?"EE":"99"};cursor:pointer;transform:rotate(45deg);"></div>`
+        :`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:${isActive?"3px solid #fff":"2.5px solid #1B1730"};box-shadow:0 0 ${isActive?14:8}px ${color}${isActive?"EE":"88"};cursor:pointer;"></div>`;
+      marker.setIcon(L.divIcon({html:shape,className:"",iconSize:[size,size],iconAnchor:[size/2,size/2]}));
       if (isActive) marker.openPopup();
     });
   }, [expanded, city, spots, view]);
 
-  const cityInfo = CITIES.find(c => c.id === city);
-  const toggle = (id, idx) => { setExpanded(e => e===id?null:id); setActivePin(idx); };
+  const cityInfo = CITIES.find(c=>c.id===city);
+  const toggle = (id,idx)=>{setExpanded(e=>e===id?null:id);setActivePin(idx);};
 
-  // Search (also include myFinds)
-  const searchResults = useMemo(() => {
-    if (!searchQ || searchQ.length < 2) return [];
-    const q = searchQ.toLowerCase();
-    const results = [];
-    Object.entries(DATA).forEach(([cityId, spotList]) => {
-      spotList.forEach(spot => {
-        if ([spot.name,spot.desc,spot.addr,spot.cat].some(s=>s?.toLowerCase().includes(q)))
-          results.push({...spot, cityId});
-      });
+  const searchResults = useMemo(()=>{
+    if (!searchQ||searchQ.length<2) return [];
+    const q=searchQ.toLowerCase(), results=[];
+    Object.entries(DATA).forEach(([cityId,spotList])=>{
+      spotList.forEach(spot=>{if([spot.name,spot.desc,spot.addr,spot.cat].some(s=>s?.toLowerCase().includes(q)))results.push({...spot,cityId});});
     });
-    myFinds.forEach(f => {
-      if ([f.name,f.desc,f.addr,f.cat].some(s=>s?.toLowerCase().includes(q)))
-        results.push({...f, cityId:f.city, isMyFind:true});
-    });
+    myFinds.forEach(f=>{if([f.name,f.desc,f.addr,f.cat].some(s=>s?.toLowerCase().includes(q)))results.push({...f,cityId:f.city,isMyFind:true});});
     return results.slice(0,50);
-  }, [searchQ, myFinds]);
+  },[searchQ,myFinds]);
 
-  // ── Card component
+  // ── SHARE SPOT
+  const openTikTok = (e, name) => {
+    e.stopPropagation();
+    const q = encodeURIComponent(name);
+    const webUrl = `https://www.tiktok.com/search?q=${q}`;
+    const ua = navigator.userAgent;
+    if (/Android/i.test(ua)) {
+      // Chrome on Android handles intent:// natively — launches TikTok app with search
+      window.location.href = `intent://search?q=${q}#Intent;scheme=snssdk1233;package=com.zhiliaoapp.musically;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+    } else if (/iPhone|iPad|iPod/i.test(ua)) {
+      // iOS: try TikTok custom scheme; cancel web fallback if app opens (page goes hidden)
+      const t = setTimeout(() => window.open(webUrl, "_blank"), 1500);
+      document.addEventListener("visibilitychange", () => { if (document.hidden) clearTimeout(t); }, { once: true });
+      window.location.href = `snssdk1233://search?q=${q}`;
+    } else {
+      window.open(webUrl, "_blank");
+    }
+  };
+
+  const shareSpot = async (e, spotName) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}${window.location.pathname}#spot=${encodeURIComponent(spotName)}`;
+    // Web Share API (mobile browsers)
+    if (navigator.share) {
+      try { await navigator.share({title:spotName,text:`Check out ${spotName} — Japan 2026`,url}); return; }
+      catch(err) { if (err.name==="AbortError") return; }
+    }
+    // Clipboard API (HTTPS / localhost)
+    try { await navigator.clipboard.writeText(url); showToast("🔗 Link copied!"); return; } catch(_) {}
+    // textarea fallback — works on plain HTTP
+    try {
+      const ta=document.createElement("textarea");
+      ta.value=url; ta.style.cssText="position:fixed;opacity:0;top:0;left:0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+      showToast("🔗 Link copied!");
+    } catch(_) { showToast("📤 "+url); }
+  };
+
+  // ── STATUS BADGE
+  const StatusBadge = ({hours}) => {
+    const s=parseOpenStatus(hours);
+    if (s==="OPEN")   return <span style={{display:"inline-flex",alignItems:"center",gap:3,background:"rgba(123,255,140,0.18)",border:"1px solid #7BFF8C88",color:"#7BFF8C",fontSize:9,fontWeight:700,padding:"1px 7px",borderRadius:20,letterSpacing:"0.08em",lineHeight:"16px",whiteSpace:"nowrap"}}>● OPEN NOW</span>;
+    if (s==="CLOSED") return <span style={{display:"inline-flex",alignItems:"center",gap:3,background:"rgba(255,80,80,0.12)",border:"1px solid #FF808055",color:"#FF8080",fontSize:9,fontWeight:700,padding:"1px 7px",borderRadius:20,letterSpacing:"0.08em",lineHeight:"16px",whiteSpace:"nowrap"}}>● CLOSED</span>;
+    return <span style={{display:"inline-flex",alignItems:"center",gap:3,background:"rgba(160,160,160,0.12)",border:"1px solid #80808055",color:"#A0A0A0",fontSize:9,fontWeight:700,padding:"1px 7px",borderRadius:20,letterSpacing:"0.08em",lineHeight:"16px",whiteSpace:"nowrap"}}>⏰ CHECK HOURS</span>;
+  };
+
+  // ── SPOT CARD
   const SpotCard = ({spot, cityId, idx, isOpen, isActive, onToggle, showCityBadge}) => {
-    const ci = CAT_MAP[spot.cat];
-    const color = spot.isMyFind ? "#FFE566" : (ci?.color || C.text);
+    const ci=CAT_MAP[spot.cat];
+    const color=spot.isMyFind?"#FFE566":(ci?.color||C.text);
+    const transport=isOpen?getTransport(spot):null;
+    const isHighlighted=highlightSpot===spot.name.replace(/^⚠ /,"");
     return (
-      <div ref={el => { if(cityId===city) cardRefs.current[idx]=el; }} onClick={onToggle}
-        style={{background:isOpen?"#2E2550":"#271F45",border:`1px solid ${isActive||isOpen?color:"#4A4070"}`,borderLeft:`5px solid ${color}`,borderRadius:8,padding:"12px 14px 12px 12px",cursor:"pointer",position:"relative",boxSizing:"border-box",width:"100%"}}>
-        {spot.tourist===1 && (
-          <div style={{position:"absolute",top:0,right:0,background:"rgba(255,140,112,0.3)",color:"#FFB38A",fontSize:9,fontWeight:700,letterSpacing:"0.1em",padding:"3px 8px",borderBottomLeftRadius:6,lineHeight:"16px"}}>⚠ TOURIST MAGNET</div>
-        )}
+      <div ref={el=>{if(cityId===city)cardRefs.current[idx]=el;}} onClick={onToggle}
+        style={{background:isOpen?"#2E2550":"#271F45",border:`1px solid ${isHighlighted?"#FFE566":isActive||isOpen?color:"#4A4070"}`,borderLeft:`5px solid ${isHighlighted?"#FFE566":color}`,borderRadius:8,padding:"12px 14px 12px 12px",cursor:"pointer",position:"relative",boxSizing:"border-box",width:"100%",boxShadow:isHighlighted?"0 0 20px #FFE56644":undefined,transition:"box-shadow 0.3s"}}>
         <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:7,flexWrap:"wrap"}}>
           <div style={{display:"inline-block",background:color+"33",border:`1px solid ${color}88`,color,fontSize:10,fontWeight:700,letterSpacing:"0.1em",padding:"2px 9px",borderRadius:20,lineHeight:"16px"}}>{spot.isMyFind?"⭐ MY FIND":(ci?.label||spot.cat)}</div>
-          {spot.price && <div style={{display:"inline-block",background:"#ffffff15",color:"#FFE566",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>{PL[spot.price]}</div>}
-          {spot.hours && <div style={{display:"inline-block",background:"#ffffff0d",color:"#B0A0C8",fontSize:10,padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>⏰ {spot.hours}</div>}
-          {showCityBadge && <div style={{display:"inline-block",background:"#2A2050",color:C.muted,fontSize:10,padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>{CITIES.find(c=>c.id===cityId)?.emoji} {cityId?.toUpperCase()}</div>}
+          {spot.tourist===1&&(
+            <div style={{display:"inline-block",background:"rgba(255,140,112,0.2)",border:"1px solid #FFB38A66",color:"#FFB38A",fontSize:9,fontWeight:700,letterSpacing:"0.1em",padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>⚠ TOURIST MAGNET</div>
+          )}
+          {spot.price&&<div style={{display:"inline-block",background:"#ffffff15",color:"#FFE566",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>{PL[spot.price]}</div>}
+          {spot.hours&&<StatusBadge hours={spot.hours}/>}
+          {spot.hours&&<div style={{display:"inline-block",background:"#ffffff0d",color:"#B0A0C8",fontSize:10,padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>⏰ {spot.hours}</div>}
+          {showCityBadge&&<div style={{display:"inline-block",background:"#2A2050",color:C.muted,fontSize:10,padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>{CITIES.find(c=>c.id===cityId)?.emoji} {cityId?.toUpperCase()}</div>}
         </div>
-        <div style={{fontFamily:"Impact,'Arial Black',Arial,sans-serif",fontSize:17,fontWeight:900,color:"#FFFFFF",letterSpacing:"0.04em",lineHeight:"22px",marginBottom:5,paddingRight:24,display:"block",visibility:"visible",opacity:1}}>
+        <div style={{fontFamily:"Impact,'Arial Black',Arial,sans-serif",fontSize:17,fontWeight:900,color:"#FFFFFF",letterSpacing:"0.04em",lineHeight:"22px",marginBottom:5,display:"block"}}>
           {spot.name.replace(/^⚠ /,"")}
         </div>
         <div style={{fontSize:11,color:"#B0A0D8",lineHeight:"16px",display:"block",marginBottom:isOpen?10:0}}>📍 {spot.addr}</div>
-        {isOpen && (
+        {isOpen&&(
           <div style={{marginTop:4}}>
             <p style={{fontSize:13,lineHeight:"22px",color:"#D8CCEE",marginBottom:12,display:"block"}}>{spot.desc}</p>
-            {spot.tip && (
+            {spot.tip&&(
               <div style={{background:color+"22",borderLeft:`3px solid ${color}`,padding:"10px 12px",borderRadius:"0 8px 8px 0",marginBottom:12}}>
                 <div style={{fontSize:10,color,fontWeight:700,letterSpacing:"0.14em",marginBottom:4,lineHeight:"16px"}}>💡 LOCAL TIP</div>
                 <p style={{fontSize:12,color:"#C8BCEC",lineHeight:"20px",display:"block"}}>{spot.tip}</p>
               </div>
             )}
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name.replace(/^⚠ /,"")+" "+spot.addr)}`}
-               target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
-               style={{fontSize:10,color:"#B0A0D8",textDecoration:"none",border:"1px solid #5A4A80",padding:"5px 12px",borderRadius:4,letterSpacing:"0.1em",display:"inline-block",background:"rgba(255,255,255,0.05)",lineHeight:"16px"}}>
-              OPEN IN GOOGLE MAPS ↗
-            </a>
+            {/* 🚆 TRANSPORT */}
+            {transport&&(
+              <div style={{background:"rgba(45,255,200,0.06)",border:"1px solid rgba(45,255,200,0.2)",borderRadius:8,padding:"10px 12px",marginBottom:12}}>
+                <div style={{fontSize:10,color:C.teal,fontWeight:700,letterSpacing:"0.14em",marginBottom:6}}>🚆 GET THERE</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:"3px 14px",marginBottom:4}}>
+                  <span style={{fontSize:11,color:C.text}}><b>Station:</b> {transport.station}</span>
+                  <span style={{fontSize:11,color:C.text}}><b>Walk:</b> {transport.walk}</span>
+                  <span style={{fontSize:11,color:transport.jrPass?"#7BFF8C":"#FF8080"}}><b>JR Pass:</b> {transport.jrPass?"✓ Covered":"✗ "+transport.note}</span>
+                </div>
+                <p style={{fontSize:11,color:C.muted,lineHeight:"17px",margin:0}}>💬 {transport.tip}</p>
+              </div>
+            )}
+            {/* Links row */}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name.replace(/^⚠ /,"")+" "+spot.addr)}`}
+                 target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
+                 style={{fontSize:10,color:"#B0A0D8",textDecoration:"none",border:"1px solid #5A4A80",padding:"5px 12px",borderRadius:4,letterSpacing:"0.1em",display:"inline-block",background:"rgba(255,255,255,0.05)",lineHeight:"16px"}}>
+                GOOGLE MAPS ↗
+              </a>
+              <button onClick={e=>openTikTok(e,spot.name.replace(/^⚠ /,""))}
+                style={{fontSize:10,color:"#E879F9",border:"1px solid #E879F955",padding:"5px 12px",borderRadius:4,letterSpacing:"0.1em",display:"inline-block",background:"rgba(232,121,249,0.08)",lineHeight:"16px",cursor:"pointer",fontFamily:"inherit"}}>
+                🎵 TIKTOK
+              </button>
+              <button onClick={e=>shareSpot(e,spot.name.replace(/^⚠ /,""))}
+                style={{fontSize:10,color:"#C0A8FF",textDecoration:"none",border:"1px solid #C0A8FF55",padding:"5px 12px",borderRadius:4,letterSpacing:"0.1em",display:"inline-block",background:"rgba(192,168,255,0.08)",lineHeight:"16px",cursor:"pointer",fontFamily:"inherit"}}>
+                📤 SHARE
+              </button>
+            </div>
           </div>
         )}
         <div style={{position:"absolute",top:"50%",right:12,transform:isOpen?"translateY(-50%) rotate(180deg)":"translateY(-50%)",color:isOpen?color:"#7060A0",fontSize:12,lineHeight:1}}>▼</div>
       </div>
     );
   };
+
+  // ── MAP CONTAINER helper (handles offline)
 
   // ── RENDER ─────────────────────────────────────────────────
   return (
@@ -1412,44 +1595,53 @@ export default function JapanGuide() {
           .nav-tabs::-webkit-scrollbar{display:none;}
           .header-row{flex-wrap:nowrap!important;align-items:center;}
           .header-title{flex-shrink:0;}
+          .city-tabs{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap!important;}
+          .city-tabs::-webkit-scrollbar{display:none;}
+          .cat-pills{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap!important;}
+          .cat-pills::-webkit-scrollbar{display:none;}
         }
         .stripe{background:repeating-linear-gradient(90deg,#FF6EB4 0 9.09%,#FF8C70 9.09% 18.18%,#FFE566 18.18% 27.27%,#2DFFC8 27.27% 36.36%,#C0A8FF 36.36% 45.45%,#7BFF8C 45.45% 54.54%,#FFB347 54.54% 63.63%,#FF9F43 63.63% 72.72%,#E879F9 72.72% 81.81%,#60BFFF 81.81% 100%);height:4px;}
       `}</style>
 
-      {/* ── HEADER */}
+      {/* TOAST */}
+      {toastMsg&&(
+        <div style={{position:"fixed",bottom:80,left:"50%",transform:"translateX(-50%)",background:"#2E2550",border:"1px solid #FF6EB4",color:"#FFF",fontSize:13,padding:"10px 20px",borderRadius:20,zIndex:9999,whiteSpace:"nowrap",boxShadow:"0 4px 20px #00000066",pointerEvents:"none"}}>
+          {toastMsg}
+        </div>
+      )}
+
+      {/* HEADER */}
       <div style={{background:"linear-gradient(135deg,#110D22,#1F1440 50%,#2A1858)",position:"sticky",top:0,zIndex:100,boxShadow:"0 4px 30px #00000088"}}>
         <div style={{maxWidth:1320,margin:"0 auto",padding:"0 16px"}}>
-          <div className="header-row" style={{display:"flex",alignItems:"center",gap:isMobile?8:16,padding:"10px 0 0",flexWrap:isMobile?"nowrap":"wrap"}}>
+          <div className="header-row" style={{display:"flex",alignItems:"center",gap:16,padding:"10px 0 0",flexWrap:"wrap"}}>
             <div className="header-title" style={{flexShrink:0}}>
-              <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"clamp(18px,5vw,28px)":"clamp(22px,4vw,42px)",letterSpacing:"0.06em",lineHeight:1,background:"linear-gradient(90deg,#FF6EB4,#FF8C70,#FFE566)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",display:"block"}}>
-                JAPAN 2026
-              </div>
-              {!isMobile && <div style={{fontSize:10,color:C.muted,letterSpacing:"0.2em",fontWeight:600,marginTop:2}}>UNDERGROUND TRAVEL GUIDE ▸ 24 MAR – 15 APR</div>}
+              <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"clamp(18px,5vw,28px)":"clamp(22px,4vw,42px)",letterSpacing:"0.06em",lineHeight:1,background:"linear-gradient(90deg,#FF6EB4,#FF8C70,#FFE566)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",display:"block"}}>JAPAN 2026</div>
+              {!isMobile&&<div style={{fontSize:10,color:C.muted,letterSpacing:"0.2em",fontWeight:600,marginTop:2}}>UNDERGROUND TRAVEL GUIDE ▸ 24 MAR – 15 APR</div>}
             </div>
             <div style={{flex:1}}/>
-            <div className="nav-tabs" style={{display:"flex",gap:isMobile?0:2,flexShrink:0}}>
-              {VIEWS.map(v => {
-                const active = view===v.id;
+            <div className="nav-tabs" style={{display:"flex",gap:0,width:isMobile?"100%":"auto",borderTop:isMobile?`1px solid ${C.border}`:"none",marginTop:isMobile?6:0}}>
+              {VIEWS.map(v=>{
+                const active=view===v.id;
                 return (
                   <button key={v.id} onClick={()=>setView(v.id)}
-                    style={{background:active?"rgba(255,110,180,0.18)":"transparent",border:"none",borderBottom:active?"2px solid #FF6EB4":"2px solid transparent",color:active?"#FF6EB4":C.dim,fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"11px":"clamp(11px,1.4vw,14px)",letterSpacing:"0.08em",padding:isMobile?"7px 8px 6px":"8px 12px 7px",cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
-                    {v.icon} {v.label}
+                    style={{background:active?"rgba(255,110,180,0.18)":"transparent",border:"none",borderBottom:active?"2px solid #FF6EB4":"2px solid transparent",color:active?"#FF6EB4":C.dim,fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?"10px":"clamp(11px,1.4vw,14px)",letterSpacing:"0.08em",padding:isMobile?"8px 0 7px":"8px 12px 7px",cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s",flex:isMobile?1:undefined,textAlign:"center"}}>
+                    {v.icon}{isMobile?<><br/>{v.label}</>:` ${v.label}`}
                   </button>
                 );
               })}
             </div>
           </div>
           <div className="stripe" style={{margin:"8px -16px 0"}}/>
-          {view==="guide" && (
-            <div style={{display:"flex",gap:1,overflowX:"auto",scrollbarWidth:"none",padding:"6px 0 0"}}>
-              {CITIES.map(c => {
-                const active = city===c.id, bl = BLOSSOM[c.id];
+          {view==="guide"&&(
+            <div className="city-tabs" style={{display:"flex",gap:1,overflowX:"auto",scrollbarWidth:"none",padding:"6px 0 0"}}>
+              {CITIES.map(c=>{
+                const active=city===c.id,bl=BLOSSOM[c.id];
                 return (
                   <button key={c.id} onClick={()=>{setCity(c.id);setCat("all");setExpanded(null);setActivePin(null);}}
                     style={{background:active?"rgba(255,110,180,0.15)":"transparent",border:"none",borderBottom:active?"2px solid #FF6EB4":"2px solid transparent",color:active?"#FF6EB4":C.dim,fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:"clamp(9px,1.3vw,13px)",letterSpacing:"0.1em",padding:"8px 9px 7px",cursor:"pointer",whiteSpace:"nowrap",transition:"all 0.15s"}}>
                     {c.emoji} {c.label}
                     <div style={{fontSize:9,fontFamily:"Arial,sans-serif",fontWeight:300,letterSpacing:"0.1em",color:active?C.muted:C.dim}}>
-                      {c.sub} {bl && <span>{bl.pct>=80?"🌸":bl.pct>=50?"🌷":"🍃"}</span>}
+                      {c.sub} {bl&&<span>{bl.pct>=80?"🌸":bl.pct>=50?"🌷":"🍃"}</span>}
                     </div>
                   </button>
                 );
@@ -1461,14 +1653,12 @@ export default function JapanGuide() {
 
       <div style={{maxWidth:1320,margin:"0 auto",padding:isMobile?"0 10px":"0 16px"}}>
 
-        {/* ══ EXPLORE VIEW ══ */}
-        {view==="guide" && (
+        {/* ══ EXPLORE ══ */}
+        {view==="guide"&&(
           <>
-            {/* ── Weather badge in explore ── */}
-            {cityInfo && (()=>{
-              const today = new Date().toISOString().slice(0,10);
-              const wx = weather[today]?.[cityInfo.id];
-              return wx ? (
+            {cityInfo&&(()=>{
+              const today=new Date().toISOString().slice(0,10), wx=weather[today]?.[cityInfo.id];
+              return wx?(
                 <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(0,207,207,0.08)",border:"1px solid rgba(0,207,207,0.25)",borderRadius:8,padding:"8px 14px",marginBottom:8}}>
                   <span style={{fontSize:22}}>{wx.icon}</span>
                   <div>
@@ -1476,9 +1666,9 @@ export default function JapanGuide() {
                     <div style={{fontSize:12,color:C.text,fontWeight:700}}>{wx.hi}°C / {wx.lo}°C {wx.rain>0?`· ${wx.rain}mm rain`:""}</div>
                   </div>
                 </div>
-              ) : null;
+              ):null;
             })()}
-            {cityInfo && BLOSSOM[cityInfo.id] && (
+            {cityInfo&&BLOSSOM[cityInfo.id]&&(
               <div style={{background:"#241840",border:"1px solid #4A3060",borderRadius:8,padding:"10px 14px",margin:"12px 0 10px",display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
                 <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:14,color:"#FF9F43",letterSpacing:"0.05em",whiteSpace:"nowrap"}}>🌸 CHERRY BLOSSOM</div>
                 <div style={{flex:1,minWidth:180}}>
@@ -1493,9 +1683,8 @@ export default function JapanGuide() {
                 </div>
               </div>
             )}
-
-            <div style={{padding:"8px 0",display:"flex",flexWrap:isMobile?"nowrap":"wrap",alignItems:"center",gap:isMobile?"8px":"6px 12px",borderBottom:`1px solid ${C.border}`,marginBottom:14,overflowX:isMobile?"auto":"visible",scrollbarWidth:"none"}}>
-              {!isMobile && <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(13px,2vw,20px)",color:C.text,letterSpacing:"0.04em",flexShrink:0}}>
+            <div className="cat-pills" style={{padding:"8px 0",display:"flex",flexWrap:isMobile?"nowrap":"wrap",alignItems:"center",gap:isMobile?"8px":"6px 12px",borderBottom:`1px solid ${C.border}`,marginBottom:14,overflowX:isMobile?"auto":"visible",scrollbarWidth:"none"}}>
+              {!isMobile&&<div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(13px,2vw,20px)",color:C.text,letterSpacing:"0.04em",flexShrink:0}}>
                 {cityInfo?.emoji} {cityInfo?.label} — {cityInfo?.sub}
                 <span style={{fontSize:11,color:C.dim,fontFamily:"Arial,sans-serif",marginLeft:8}}>{spots.length} SPOTS</span>
               </div>}
@@ -1511,11 +1700,10 @@ export default function JapanGuide() {
                 })}
               </div>
             </div>
-
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"minmax(0,1fr) minmax(0,1fr)",gap:16,alignItems:"start"}}>
-              {isMobile && (
+              {isMobile&&(
                 <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"250px",marginBottom:4}}>
-                  <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
+                  <MapContainer mapRef={mapRef} isOnline={isOnline} height="250px"/>
                 </div>
               )}
               <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:isMobile?"none":"calc(100vh - 300px)",overflowY:isMobile?"visible":"auto",paddingRight:isMobile?0:4,paddingBottom:40}}>
@@ -1524,7 +1712,7 @@ export default function JapanGuide() {
                   return <SpotCard key={id} spot={spot} cityId={city} idx={i} isOpen={expanded===id} isActive={activePin===i} onToggle={()=>toggle(id,i)}/>;
                 })}
               </div>
-              {!isMobile && (
+              {!isMobile&&(
                 <div style={{position:"sticky",top:182,height:"calc(100vh - 300px)"}}>
                   <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:6}}>
                     {CATS.filter(c=>c.id!=="all").map(c=>(
@@ -1539,14 +1727,13 @@ export default function JapanGuide() {
                     </div>
                   </div>
                   <div style={{borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`,height:"420px"}}>
-                    <div ref={mapRef} style={{width:"100%",height:"100%"}}/>
+                    <MapContainer mapRef={mapRef} isOnline={isOnline} height="420px"/>
                   </div>
                 </div>
               )}
             </div>
-
             <div style={{borderTop:`1px solid ${C.border}`,padding:"18px 0 40px",marginTop:12,display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:10}}>
-              {wxErr && <div style={{background:"rgba(255,110,67,0.1)",border:"1px solid rgba(255,110,67,0.3)",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#FF8C70",marginBottom:12}}>⚠️ Weather forecast unavailable — check back when connected.</div>}
+              {wxErr&&<div style={{background:"rgba(255,110,67,0.1)",border:"1px solid rgba(255,110,67,0.3)",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#FF8C70",marginBottom:12}}>⚠️ Weather unavailable — check back when connected.</div>}
               {[["📡 EVENTS","Check RA and venue Instagram/LINE. Many underground events aren't listed anywhere else."],["💴 CASH","Most clubs cash-only. 7-Eleven and FamilyMart ATMs accept foreign cards. Bring ¥20k+ for a night out."],["🧳 LUGGAGE","Yamato Transport: send bags hotel-to-hotel or to the airport. ¥1,500–2,500/bag."],["🚆 JR PASS","Activate at KIX airport. IC card (ICOCA) for local trains. Last train ~midnight."],["🏷 TAX FREE","Ask for 免税 (menzei) for purchases over ¥5,000 with passport."],["🌸 BLOSSOM","Peak: Osaka 28 Mar, Hiroshima 25 Mar, Kyoto 1–5 Apr. Tokyo past peak by your arrival."]].map(([t,d])=>(
                 <div key={t} style={{background:C.surf,border:`1px solid ${C.border}`,borderRadius:8,padding:"11px 13px"}}>
                   <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:13,color:C.pink,letterSpacing:"0.1em",marginBottom:5}}>{t}</div>
@@ -1557,14 +1744,14 @@ export default function JapanGuide() {
           </>
         )}
 
-        {/* ══ ITINERARY VIEW ══ */}
-        {view==="itin" && (
+        {/* ══ ITINERARY ══ */}
+        {view==="itin"&&(
           <div style={{padding:"16px 0 60px"}}>
             <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(18px,3vw,30px)",color:C.text,letterSpacing:"0.06em",marginBottom:4}}>📅 DAY-BY-DAY ITINERARY</div>
             <div style={{fontSize:11,color:C.muted,marginBottom:20,letterSpacing:"0.1em"}}>BASED ON YOUR FRIEND'S PLAN + YOUR PERSONALISED PICKS — CLICK ANY PICK TO JUMP TO IT IN EXPLORE</div>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {ITIN.map((day,i)=>{
-                const cityObj=CITIES.find(c=>c.id===day.city), bl=BLOSSOM[day.city];
+                const cityObj=CITIES.find(c=>c.id===day.city),bl=BLOSSOM[day.city];
                 return (
                   <div key={i} style={{background:"#231D3A",border:"1px solid #3D3560",borderRadius:10,overflow:"hidden"}}>
                     <div style={{background:"#1F1840",padding:"11px 16px",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap",borderBottom:"1px solid #3D3560"}}>
@@ -1572,26 +1759,24 @@ export default function JapanGuide() {
                       <div style={{fontSize:10,color:C.dim,letterSpacing:"0.14em"}}>{day.day}</div>
                       <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:15,color:"#FFF",letterSpacing:"0.04em",flex:1}}>{day.label}</div>
                       <div style={{fontSize:11,color:C.muted,background:"#2A2050",padding:"4px 10px",borderRadius:12}}>{cityObj?.emoji} {cityObj?.label}</div>
-                      {bl && <div style={{fontSize:11,color:"#FF9F43",background:"rgba(255,159,67,0.12)",border:"1px solid rgba(255,159,67,0.3)",padding:"4px 10px",borderRadius:12}}>{bl.status}</div>}
+                      {bl&&<div style={{fontSize:11,color:"#FF9F43",background:"rgba(255,159,67,0.12)",border:"1px solid rgba(255,159,67,0.3)",padding:"4px 10px",borderRadius:12}}>{bl.status}</div>}
                       {(()=>{
-                        // Convert displayed date to ISO: "26 MAR" -> "2026-03-26"
                         const months={JAN:"01",FEB:"02",MAR:"03",APR:"04",MAY:"05"};
-                        const parts = day.date.split(" ");
-                        const iso = parts.length===2 ? `2026-${months[parts[1]]||"03"}-${parts[0].padStart(2,"0")}` : null;
-                        const wx = iso && weather[iso] && weather[iso][day.city];
-                        if (!wx) return wxLoading ? <div style={{fontSize:11,color:C.dim,padding:"4px 10px",borderRadius:12}}>🌡️ fetching…</div> : null;
+                        const parts=day.date.split(" ");
+                        const iso=parts.length===2?`2026-${months[parts[1]]||"03"}-${parts[0].padStart(2,"0")}`:null;
+                        const wx=iso&&weather[iso]&&weather[iso][day.city];
+                        if(!wx)return wxLoading?<div style={{fontSize:11,color:C.dim,padding:"4px 10px",borderRadius:12}}>🌡️ fetching…</div>:null;
                         return (
                           <div style={{display:"flex",alignItems:"center",gap:5,background:"rgba(0,207,207,0.10)",border:"1px solid rgba(0,207,207,0.3)",padding:"4px 10px",borderRadius:12,fontSize:11,color:"#00CFCF",fontWeight:700,whiteSpace:"nowrap"}}>
-                            <span style={{fontSize:14}}>{wx.icon}</span>
-                            <span>{wx.hi}°/{wx.lo}°C</span>
-                            {wx.rain>0 && <span style={{color:"#7BCFFF"}}>💧{wx.rain}mm</span>}
+                            <span style={{fontSize:14}}>{wx.icon}</span><span>{wx.hi}°/{wx.lo}°C</span>
+                            {wx.rain>0&&<span style={{color:"#7BCFFF"}}>💧{wx.rain}mm</span>}
                           </div>
                         );
                       })()}
                     </div>
                     <div style={{padding:"12px 16px"}}>
                       <p style={{fontSize:13,lineHeight:"22px",color:"#C8BCEC",marginBottom:day.picks?.length?12:0,display:"block"}}>{day.note}</p>
-                      {day.picks?.length>0 && (
+                      {day.picks?.length>0&&(
                         <div>
                           <div style={{fontSize:10,color:"#FF6EB4",fontWeight:700,letterSpacing:"0.12em",marginBottom:7}}>🎯 PICKS FOR THIS DAY</div>
                           <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
@@ -1600,13 +1785,7 @@ export default function JapanGuide() {
                               const color=sd?CAT_MAP[sd.cat]?.color:C.muted;
                               return (
                                 <button key={j}
-                                  onClick={()=>{
-                                    setView("guide"); setCity(day.city); setCat("all");
-                                    setTimeout(()=>{
-                                      const idx=DATA[day.city]?.findIndex(s=>s.name.replace(/^⚠ /,"").toLowerCase()===pick.toLowerCase());
-                                      if(idx>=0){setExpanded(`${day.city}-${idx}`);setActivePin(idx);cardRefs.current[idx]?.scrollIntoView({behavior:"smooth"});}
-                                    },300);
-                                  }}
+                                  onClick={()=>{setView("guide");setCity(day.city);setCat("all");setTimeout(()=>{const idx=DATA[day.city]?.findIndex(s=>s.name.replace(/^⚠ /,"").toLowerCase()===pick.toLowerCase());if(idx>=0){setExpanded(`${day.city}-${idx}`);setActivePin(idx);cardRefs.current[idx]?.scrollIntoView({behavior:"smooth"});}},300);}}
                                   style={{background:(color||C.muted)+"22",border:`1px solid ${(color||C.muted)}66`,color:color||C.muted,fontSize:11,padding:"5px 12px",borderRadius:20,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:600,letterSpacing:"0.05em"}}>
                                   {pick}
                                 </button>
@@ -1623,22 +1802,22 @@ export default function JapanGuide() {
           </div>
         )}
 
-        {/* ══ SEARCH VIEW ══ */}
-        {view==="search" && (
+        {/* ══ SEARCH ══ */}
+        {view==="search"&&(
           <div style={{padding:"20px 0 60px"}}>
             <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(18px,3vw,30px)",color:C.text,letterSpacing:"0.06em",marginBottom:14}}>🔍 SEARCH ALL CITIES</div>
-            <input type="text" placeholder={`Search across all spots in 7 cities + your saved finds...`}
+            <input type="text" placeholder="Search across all spots in 7 cities + your saved finds..."
               value={searchQ} onChange={e=>setSearchQ(e.target.value)}
               style={{width:"100%",background:"#271F45",border:"2px solid #4A4070",borderRadius:8,padding:"14px 18px",fontSize:16,color:"#FFF",fontFamily:"Arial,sans-serif",marginBottom:14}}/>
-            {searchQ.length>=2 && <div style={{fontSize:11,color:C.muted,letterSpacing:"0.1em",marginBottom:12}}>{searchResults.length} RESULTS FOR "{searchQ.toUpperCase()}"</div>}
+            {searchQ.length>=2&&<div style={{fontSize:11,color:C.muted,letterSpacing:"0.1em",marginBottom:12}}>{searchResults.length} RESULTS FOR "{searchQ.toUpperCase()}"</div>}
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {searchResults.map((spot,i)=>(
                 <div key={i} onClick={()=>{setView("guide");setCity(spot.cityId);setCat("all");setTimeout(()=>{const idx=DATA[spot.cityId]?.findIndex(s=>s.name===spot.name);if(idx>=0){setExpanded(`${spot.cityId}-${idx}`);setActivePin(idx);}},250);}}>
                   <SpotCard spot={spot} cityId={spot.cityId} idx={i} isOpen={false} isActive={false} onToggle={()=>{}} showCityBadge={true}/>
                 </div>
               ))}
-              {searchQ.length<2 && (
-                <div style={{textAlign:"center",padding:"50px 20px",color:C.dim,fontSize:14}}>
+              {searchQ.length<2&&(
+                <div style={{textAlign:"center",padding:"50px 20px",color:C.dim}}>
                   <div style={{fontSize:36,marginBottom:10}}>🔍</div>
                   <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:18,color:C.muted,letterSpacing:"0.1em"}}>TYPE TO SEARCH ACROSS ALL CITIES</div>
                 </div>
@@ -1647,8 +1826,79 @@ export default function JapanGuide() {
           </div>
         )}
 
-        {/* ══ MY FINDS VIEW ══ */}
-        {view==="myfinds" && (
+        {/* ══ RATES ══ */}
+        {view==="rates"&&(
+          <div style={{padding:"20px 0 60px"}}>
+            <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:"clamp(18px,3vw,30px)",color:C.text,letterSpacing:"0.06em",marginBottom:4}}>💴 EXCHANGE RATES</div>
+            <div style={{fontSize:11,color:C.muted,letterSpacing:"0.1em",marginBottom:20}}>LIVE GBP → JPY · FRANKFURTER.APP</div>
+
+            {/* Live rate */}
+            <div style={{background:"linear-gradient(135deg,#231D3A,#2E2550)",border:`1px solid ${C.border}`,borderRadius:12,padding:"24px",marginBottom:20,textAlign:"center"}}>
+              {rates?(
+                <>
+                  <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:isMobile?52:72,color:C.yellow,letterSpacing:"0.04em",lineHeight:1}}>£1 = ¥{rates.rate.toLocaleString()}</div>
+                  <div style={{fontSize:11,color:C.muted,marginTop:8,letterSpacing:"0.1em"}}>Last updated: {rates.updated}</div>
+                  <button onClick={()=>setRates(null)} style={{marginTop:10,background:"transparent",border:`1px solid ${C.border}`,color:C.muted,fontSize:10,padding:"4px 14px",borderRadius:20,cursor:"pointer",letterSpacing:"0.1em"}}>↺ REFRESH</button>
+                </>
+              ):(
+                <div style={{color:C.muted,fontSize:14,padding:"20px 0"}}>{isOnline?"⏳ Loading live rate…":"⚡ Offline — rate unavailable"}</div>
+              )}
+            </div>
+
+            {/* Converter */}
+            {rates&&(
+              <div style={{background:C.surf,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px",marginBottom:20}}>
+                <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:16,color:C.pink,letterSpacing:"0.1em",marginBottom:14}}>CONVERTER</div>
+                <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,flexWrap:"wrap"}}>
+                  <div style={{position:"relative",flex:1,minWidth:140}}>
+                    <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:22,color:C.yellow,fontFamily:"'Bebas Neue',Impact,sans-serif",pointerEvents:"none"}}>£</span>
+                    <input type="number" inputMode="decimal" placeholder="0" value={rateInput}
+                      onChange={e=>{setRateInput(e.target.value);setJpyInput(e.target.value?String(Math.round(parseFloat(e.target.value)*rates.rate)):"");}}
+                      style={{width:"100%",background:"#1B1730",border:`2px solid ${C.border}`,borderRadius:10,padding:"14px 18px 14px 40px",fontSize:28,color:"#FFF",fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",touchAction:"manipulation",boxSizing:"border-box"}}/>
+                  </div>
+                  <div style={{fontSize:22,color:C.muted}}>⇄</div>
+                  <div style={{position:"relative",flex:1,minWidth:140}}>
+                    <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:22,color:C.teal,fontFamily:"'Bebas Neue',Impact,sans-serif",pointerEvents:"none"}}>¥</span>
+                    <input type="number" inputMode="decimal" placeholder="0" value={jpyInput}
+                      onChange={e=>{setJpyInput(e.target.value);setRateInput(e.target.value?String((parseFloat(e.target.value)/rates.rate).toFixed(2)):"");}}
+                      style={{width:"100%",background:"#1B1730",border:`2px solid ${C.border}`,borderRadius:10,padding:"14px 18px 14px 40px",fontSize:28,color:"#FFF",fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",touchAction:"manipulation",boxSizing:"border-box"}}/>
+                  </div>
+                </div>
+                {/* Common amounts */}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:8}}>
+                  {[10,20,50,100,200,500].map(amt=>(
+                    <div key={amt} onClick={()=>{setRateInput(String(amt));setJpyInput(String(Math.round(amt*rates.rate)));}}
+                      style={{background:"#1B1730",border:`1px solid ${C.border}`,borderRadius:8,padding:"10px 12px",cursor:"pointer",textAlign:"center"}}>
+                      <div style={{fontFamily:"'Bebas Neue',Impact,Arial,sans-serif",fontSize:18,color:C.yellow}}>£{amt}</div>
+                      <div style={{fontSize:12,color:C.teal,marginTop:2}}>¥{Math.round(amt*rates.rate).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quick reference */}
+            <div style={{background:C.surf,border:`1px solid ${C.border}`,borderRadius:12,padding:"20px"}}>
+              <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:16,color:C.pink,letterSpacing:"0.1em",marginBottom:14}}>QUICK REFERENCE — COMMON COSTS</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:0}}>
+                {[["Convenience store meal","¥500–800"],["Ramen","¥800–1,200"],["Club entry","¥2,000–3,500"],["Record (used)","¥500–3,000"],["Record (new)","¥2,500–4,000"],["Shinkansen Tokyo→Kyoto","¥13,320 (JR Pass)"],["Beer at konbini","¥200–250"],["Capsule hotel","¥3,000–5,000/night"],["Taxi (short)","¥730 flag + ¥90/280m"],["City subway ride","¥170–310"],["Okonomiyaki","¥800–1,500"],["Knife (gift-quality)","¥8,000–30,000"]].map(([item,cost])=>(
+                  <div key={item} style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:`1px solid ${C.border}`,padding:"8px 4px",gap:8}}>
+                    <span style={{fontSize:12,color:C.muted}}>{item}</span>
+                    <span style={{fontSize:12,color:C.yellow,fontWeight:700,whiteSpace:"nowrap"}}>{cost}</span>
+                  </div>
+                ))}
+              </div>
+              {rates&&(
+                <div style={{marginTop:14,padding:"10px 12px",background:"rgba(45,255,200,0.06)",border:"1px solid rgba(45,255,200,0.2)",borderRadius:8,fontSize:11,color:C.muted,lineHeight:"18px"}}>
+                  💡 At current rate: a ¥10,000 purchase ≈ <b style={{color:C.teal}}>£{(10000/rates.rate).toFixed(2)}</b> · ¥50,000 knife ≈ <b style={{color:C.teal}}>£{(50000/rates.rate).toFixed(2)}</b>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ══ MY FINDS ══ */}
+        {view==="myfinds"&&(
           <div style={{padding:"20px 0 60px"}}>
             <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20,flexWrap:"wrap"}}>
               <div>
@@ -1660,8 +1910,7 @@ export default function JapanGuide() {
                 {showForm?"✕ CANCEL":"+ ADD NEW FIND"}
               </button>
             </div>
-
-            {showForm && (
+            {showForm&&(
               <div style={{background:"#231D3A",border:"1px solid #5A4A80",borderRadius:10,padding:"20px",marginBottom:20}}>
                 <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:16,color:"#FF6EB4",letterSpacing:"0.1em",marginBottom:16}}>NEW FIND</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
@@ -1689,41 +1938,36 @@ export default function JapanGuide() {
                     </div>
                   ))}
                 </div>
-                <button onClick={()=>{
-                  if(!form.name.trim())return;
-                  saveFind({...form});
-                  setForm({name:"",cat:"food",city:"osaka",addr:"",lat:"",lng:"",desc:"",hours:"",price:1,tip:""});
-                  setShowForm(false);
-                }} style={{marginTop:16,background:"linear-gradient(90deg,#FF6EB4,#FF8C70)",border:"none",color:"#1B1730",fontFamily:"Impact,Arial,sans-serif",fontSize:15,letterSpacing:"0.12em",padding:"12px 30px",borderRadius:8,cursor:"pointer"}}>
+                <button onClick={()=>{if(!form.name.trim())return;saveFind({...form});setForm({name:"",cat:"food",city:"osaka",addr:"",lat:"",lng:"",desc:"",hours:"",price:1,tip:""});setShowForm(false);}}
+                  style={{marginTop:16,background:"linear-gradient(90deg,#FF6EB4,#FF8C70)",border:"none",color:"#1B1730",fontFamily:"Impact,Arial,sans-serif",fontSize:15,letterSpacing:"0.12em",padding:"12px 30px",borderRadius:8,cursor:"pointer"}}>
                   SAVE FIND ⭐
                 </button>
               </div>
             )}
-
-            {myFinds.length===0 ? (
+            {myFinds.length===0?(
               <div style={{textAlign:"center",padding:"60px 20px",color:C.dim,border:"2px dashed #3D3560",borderRadius:10}}>
                 <div style={{fontSize:40,marginBottom:12}}>⭐</div>
                 <div style={{fontFamily:"Impact,Arial,sans-serif",fontSize:18,color:C.muted,letterSpacing:"0.1em",marginBottom:8}}>NO FINDS YET</div>
                 <div style={{fontSize:13,lineHeight:"20px"}}>Add spots you discover whilst exploring Japan.<br/>They'll appear on the map and in search — saved permanently even after closing the app.</div>
               </div>
-            ) : (
+            ):(
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 {myFinds.map((find,i)=>{
-                  const ci=CAT_MAP[find.cat], color=ci?.color||C.text, cityObj=CITIES.find(c=>c.id===find.city);
+                  const ci=CAT_MAP[find.cat],color=ci?.color||C.text,cityObj=CITIES.find(c=>c.id===find.city);
                   return (
-                    <div key={find.id||i} style={{background:"#271F45",border:`1px solid #4A4070`,borderLeft:`5px solid ${color}`,borderRadius:8,padding:"12px 14px",position:"relative"}}>
+                    <div key={find.id||i} style={{background:"#271F45",border:"1px solid #4A4070",borderLeft:`5px solid ${color}`,borderRadius:8,padding:"12px 14px",position:"relative"}}>
                       <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:8,flexWrap:"wrap"}}>
                         <div style={{background:color+"33",border:`1px solid ${color}88`,color,fontSize:10,fontWeight:700,letterSpacing:"0.1em",padding:"2px 9px",borderRadius:20,lineHeight:"16px"}}>{ci?.label||find.cat}</div>
                         <div style={{fontSize:10,color:C.muted,background:"#2A2050",padding:"2px 9px",borderRadius:20,lineHeight:"16px"}}>{cityObj?.emoji} {cityObj?.label}</div>
-                        {find.price && <div style={{fontSize:10,color:"#FFE566",background:"#ffffff12",padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>{PL[find.price]}</div>}
-                        {find.hours && <div style={{fontSize:10,color:"#B0A0C8",background:"#ffffff0d",padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>⏰ {find.hours}</div>}
-                        {find.lat && find.lng && <div style={{fontSize:10,color:"#7BFF8C",background:"rgba(123,255,140,0.1)",padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>📍 ON MAP</div>}
+                        {find.price&&<div style={{fontSize:10,color:"#FFE566",background:"#ffffff12",padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>{PL[find.price]}</div>}
+                        {find.hours&&<div style={{fontSize:10,color:"#B0A0C8",background:"#ffffff0d",padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>⏰ {find.hours}</div>}
+                        {find.lat&&find.lng&&<div style={{fontSize:10,color:"#7BFF8C",background:"rgba(123,255,140,0.1)",padding:"2px 8px",borderRadius:20,lineHeight:"16px"}}>📍 ON MAP</div>}
                         <div style={{fontSize:10,color:C.yellow,marginLeft:"auto"}}>YOUR FIND ⭐</div>
                       </div>
                       <div style={{fontFamily:"Impact,'Arial Black',Arial,sans-serif",fontSize:17,fontWeight:900,color:"#FFF",lineHeight:"22px",marginBottom:5}}>{find.name}</div>
-                      {find.addr && <div style={{fontSize:11,color:"#B0A0D8",lineHeight:"16px",marginBottom:find.desc?8:0}}>📍 {find.addr}</div>}
-                      {find.desc && <p style={{fontSize:13,lineHeight:"20px",color:"#C8BCEC",display:"block",marginBottom:find.tip?8:0}}>{find.desc}</p>}
-                      {find.tip && <p style={{fontSize:12,lineHeight:"18px",color:"#A898C0",display:"block",fontStyle:"italic"}}>💡 {find.tip}</p>}
+                      {find.addr&&<div style={{fontSize:11,color:"#B0A0D8",lineHeight:"16px",marginBottom:find.desc?8:0}}>📍 {find.addr}</div>}
+                      {find.desc&&<p style={{fontSize:13,lineHeight:"20px",color:"#C8BCEC",display:"block",marginBottom:find.tip?8:0}}>{find.desc}</p>}
+                      {find.tip&&<p style={{fontSize:12,lineHeight:"18px",color:"#A898C0",display:"block",fontStyle:"italic"}}>💡 {find.tip}</p>}
                       <button onClick={()=>deleteFind(find.id)}
                         style={{position:"absolute",top:12,right:12,background:"rgba(255,80,80,0.15)",border:"1px solid rgba(255,80,80,0.3)",color:"#FF8080",fontSize:11,padding:"4px 8px",borderRadius:4,cursor:"pointer"}}>✕</button>
                     </div>
