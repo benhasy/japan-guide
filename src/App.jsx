@@ -1459,22 +1459,24 @@ export default function JapanGuide() {
   },[searchQ,myFinds]);
 
   // ── SHARE SPOT
+  const handleTikTok = (spotName) => {
+    const encoded = encodeURIComponent(spotName);
+    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      window.location = `tiktok://search?keyword=${encoded}`;
+      setTimeout(() => {
+        navigator.clipboard.writeText(spotName).catch(() => {});
+        showToast('📋 Copied! Paste into TikTok search');
+      }, 1500);
+    } else {
+      window.open(`https://www.tiktok.com/search?q=${encoded}`, '_blank');
+    }
+  };
+
   const openTikTok = (e, name) => {
     e.stopPropagation();
-    const q = encodeURIComponent(name);
-    const webUrl = `https://www.tiktok.com/search?q=${q}`;
-    const ua = navigator.userAgent;
-    if (/Android/i.test(ua)) {
-      // Chrome on Android handles intent:// natively — launches TikTok app with search
-      window.location.href = `intent://search?q=${q}#Intent;scheme=snssdk1233;package=com.zhiliaoapp.musically;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-    } else if (/iPhone|iPad|iPod/i.test(ua)) {
-      // iOS: try TikTok custom scheme; cancel web fallback if app opens (page goes hidden)
-      const t = setTimeout(() => window.open(webUrl, "_blank"), 1500);
-      document.addEventListener("visibilitychange", () => { if (document.hidden) clearTimeout(t); }, { once: true });
-      window.location.href = `snssdk1233://search?q=${q}`;
-    } else {
-      window.open(webUrl, "_blank");
-    }
+    handleTikTok(name);
   };
 
   const shareSpot = async (e, spotName) => {
@@ -1551,7 +1553,7 @@ export default function JapanGuide() {
             )}
             {/* Links row */}
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spot.name.replace(/^⚠ /,"")+" "+spot.addr)}`}
+              <a href={`https://www.google.com/maps/search/${encodeURIComponent(spot.name)}/@${spot.lat},${spot.lng},17z`}
                  target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()}
                  style={{fontSize:10,color:"#B0A0D8",textDecoration:"none",border:"1px solid #5A4A80",padding:"5px 12px",borderRadius:4,letterSpacing:"0.1em",display:"inline-block",background:"rgba(255,255,255,0.05)",lineHeight:"16px"}}>
                 GOOGLE MAPS ↗
